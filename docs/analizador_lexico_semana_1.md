@@ -1,3 +1,9 @@
+---
+title: Semana 1 - Flex
+parent: Análise Léxica
+nav_order: 1
+---
+
 # Analisador Léxico da semana 1
 
 ## O papel do analisador léxico
@@ -33,8 +39,7 @@ O ambiente aguarda a entrada do texto após a invocação do executável gerado.
 Após fornecer a entrada compatível com as regras léxicas, o sistema processa os tokens e finaliza a execução.
 Por em quanto, a unica coisa que vai fazer algo aparecer no terminal é esse codigo:
 
-```bash
-
+```c
 HELLO WORLD { printf("Hello, World!\n"); }
 ```
 

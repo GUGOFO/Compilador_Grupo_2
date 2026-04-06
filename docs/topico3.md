@@ -1,6 +1,6 @@
 ---
-title: Semântico
-nav_order: 3
+title: Análise Semântica
+nav_order: 4
 ---
 
 # Análise Semântica

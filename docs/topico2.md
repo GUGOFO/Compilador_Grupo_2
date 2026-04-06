@@ -1,6 +1,7 @@
 ---
-title: Sintático
-nav_order: 2
+title: Análise Sintática
+nav_order: 3
+has_children: true
 ---
 
 # Análise Sintática
