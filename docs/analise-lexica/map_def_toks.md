@@ -1,5 +1,5 @@
 ---
-title: 1 - Mapeamento e Definição dos Tokens;
+title: 1 - Mapeamento e Definição dos Tokens
 parent: Análise Léxica
 nav_order: 2
 ---
@@ -45,3 +45,82 @@ A seguir, estão todas as palavras reservadas que estarão no escopo do nosso co
 | using | Importa membros de um namespace ou define apelidos para tipos |
 | void | Indica que uma função não retorna valor ou define um ponteiro genérico. |
 | while | Estrutura de repetição que executa um bloco enquanto a condição for verdadeira. |
+
+## 1 - Tipos de Dados
+
+Palavras que definem a natureza da informação armazenada em uma variável
+
+- **bool:** Representa valores lógicos (verdadeiro ou falso).
+
+- **char:** Armazena um único caractere.
+
+- **double:** Ponto flutuante de precisão dupla.
+
+- **float:** Ponto flutuante de precisão simples.
+
+- **int:** Números inteiros.
+
+- **long:** Modificador para aumentar a precisão de inteiros ou decimais.
+
+- **short:** Modificador para reduzir o espaço de memória de inteiros.
+
+- **void:** Indica ausência de tipo ou retorno de função.
+
+## 2 -  Fluxo de Controle
+Comandos que determinam a ordem de execução das instruções do programa.
+
+- **if / else:** Estruturas de decisão condicional.
+
+- **switch / case / default:** Estruturas de seleção múltipla.
+
+- **for / while / do:** Estruturas de repetição (laços).
+
+- **break:** Interrompe o laço ou switch atual.
+
+- **continue:** Pula para a próxima iteração do laço.
+
+- **return:** Finaliza uma função e retorna um valor.
+
+## 3 - Específicos C++ e Tokens Especiais
+Elementos existentes no C++ que não existem no C
+
+- **cin:** Token especial para entrada de dados via stream.
+
+- **cout:** Token especial para saída de dados via stream.
+
+- **namespace:** Define um escopo nomeado para identificadores.
+
+- **using:** Utilizado para importar namespaces (como using namespace std).
+
+- **nullptr:** Literal que representa um ponteiro nulo de forma segura.
+
+## 4 - Modificadores e Qualificadores
+Palavras que alteram o comportamento ou a visibilidade de variáveis e funções.
+
+- **const:** Define que o valor da variável é imutável.
+
+- **static:** Define permanência de valor ou limita o escopo ao arquivo.
+
+- **unsigned:** Define que um tipo inteiro aceitará apenas valores positivos.
+
+- **extern:** Indica que a definição está em outro arquivo/módulo.
+
+- **export:** Usado para exportar declarações em sistemas de módulos.
+
+## 5 - Aliases Lógicos e Operadores em Palavra
+Substitutos textuais para operadores simbólicos e operadores de sistema.
+
+- **and:** Alias para o operador lógico &&.
+
+- **or:** Alias para o operador lógico ||.
+
+- **not:** Alias para o operador lógico !.
+
+- **sizeof:** Operador que retorna o tamanho (em bytes) de um tipo ou objeto.
+
+## 6 - Literais Booleanos
+Valores constantes para o tipo bool.
+
+- **true:** Representa o valor verdadeiro.
+
+- **false:** Representa o valor falso.
