@@ -1,7 +1,7 @@
 ---
 title: Semana 1 - Flex
 parent: Análise Léxica
-nav_order: 2
+nav_order: 3
 ---
 
 # Analisador Léxico da semana 1

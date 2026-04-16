@@ -10,7 +10,7 @@ Este documento estabelece o roteiro técnico para a implementação do analisado
 
 ## 1 - Mapeamento e Definição dos Tokens
 
-O primeiro paço é listar tudo o que a linguagem C++ possui que precisa ser identificado (Claro, que esteja no nosso escopo da disciplina)
+O primeiro passo é listar tudo o que a linguagem C++ possui que precisa ser identificado (Claro, que esteja no nosso escopo da disciplina)
 
 ### 1.1 - Palavras Reservadas: 
 
@@ -89,7 +89,7 @@ Iremos usar um arquivo .l para isso (como o professor pediu)
 
 ## 4 - Gerenciamento de Espaços e Comentários
 
-O analizador precisa saber ignorar:
+O analisador precisa saber ignorar:
 
 - Espaços em brancos: Serão descartados
 - Comentarios: Serão descartados
