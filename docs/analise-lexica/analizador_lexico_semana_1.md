@@ -1,7 +1,7 @@
 ---
 title: Semana 1 - Flex
 parent: Análise Léxica
-nav_order: 1
+nav_order: 2
 ---
 
 # Analisador Léxico da semana 1
@@ -30,11 +30,11 @@ Essa abordagem funciona tão bem por causa da separação de responsabilidades. 
 
 As imagens a seguir detalham o processo prático de compilação e o comportamento do analisador rodando no ambiente WSL.
 
-![Imagem compilada](./imgs/semana1/imagem1.png)
+![Imagem compilada](../imgs/semana1/imagem1.png)
 
 O ambiente aguarda a entrada do texto após a invocação do executável gerado.
 
-![Esperando resposta](./imgs/semana1/imagem2.png)
+![Esperando resposta](../imgs/semana1/imagem2.png)
 
 Após fornecer a entrada compatível com as regras léxicas, o sistema processa os tokens e finaliza a execução.
 Por em quanto, a unica coisa que vai fazer algo aparecer no terminal é esse codigo:
@@ -43,6 +43,6 @@ Por em quanto, a unica coisa que vai fazer algo aparecer no terminal é esse cod
 HELLO WORLD { printf("Hello, World!\n"); }
 ```
 
-![Resultados](./imgs/semana1/imagem3.png)
+![Resultados](../imgs/semana1/imagem3.png)
 
 Para sair do programa, aperte "Ctrl" + "D"

@@ -1,7 +1,7 @@
 ---
 title: Planejamento
 parent: Análise Léxica
-nav_order: 2
+nav_order: 1
 ---
 
 # Planejamento do Analizador Lexico
