@@ -14,7 +14,7 @@ Esta seção mapeia todos os símbolos que realizam operações matemáticas, l�
 | :--- | :--- | :---: |
 | + | TOK_PLUS | Operação de adição |
 | - | TOK_MINUS | Operação de subtração |
-| * | TOK_MINUS | Operação de multiplicação |
+| * | TOK_MULT | Operação de multiplicação |
 | / | TOK_DIV | Operação de divisão |
 | % | TOK_MOD | Operação modular |
 | = | TOK_ASSIGN | Atribuição simples de valor |
@@ -35,7 +35,7 @@ Esta seção mapeia todos os símbolos que realizam operações matemáticas, l�
 | <= | TOK_LE | Menor ou igual a |
 | >= | TOK_GE | Maior ou igual a |
 | && | TOK_LOGIC_AND | Operação lógica "E" |
-| \\ (Reto) | TOK_LOGIC_AND | Operação lógica "OU" |
+| \\ (Reto) | TOK_LOGIC_OR | Operação lógica "OU" |
 | ! | TOK_LOGIC_NOT | Operação lógica de negação |
 
 ### 4.3 - Específicos C++ (Stream e Escopo)
@@ -57,4 +57,4 @@ Esta seção mapeia todos os símbolos que realizam operações matemáticas, l�
 | { | TOK_LBRACE | Início de bloco de código |
 | } | TOK_RBRACE | Fim de bloco de código |
 | [ | TOK_LBRACKET | Início de índice de array |
-| ] | TOK_LBRACKET | Fim de índice de array |
+| ] | TOK_RBRACKET | Fim de índice de array |
