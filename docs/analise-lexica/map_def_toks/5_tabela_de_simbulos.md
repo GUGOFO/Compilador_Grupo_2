@@ -1,5 +1,5 @@
 ---
-title: Tabela de Símbolos
+title: 5 - Tabela de Símbolos
 parent: Mapeamento de Tokens
 nav_order: 5
 ---

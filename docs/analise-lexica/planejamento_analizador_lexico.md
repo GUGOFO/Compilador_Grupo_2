@@ -71,11 +71,11 @@ Para o reconhecimento via Flex, utilizaremos padrões de Regex. Abaixo os princi
 
 | Token           | Expressão Regular        | Descrição                                                     |
 |-----------------|--------------------------|---------------------------------------------------------------|
-| Identifier      | `[a-zA-Z_][a-zA-Z0-9_]*` | Começa com letra/underscore, seguido de alfanuméricos.        |
-| Int Literal     | `[0-9]+`                 | Sequência de um ou mais dígitos.                              |
-| Float Literal   | `[0-9]*\.[0-9]+`         | Dígitos opcionais, ponto, seguidos de dígitos obrigatórios.   |
-| String          | `"([^"\n]*)"`            | Cadeia entre aspas, sem quebra de linha.                      |
-| Comment (Line)  | `\/\/.*`                 | Ignora tudo após `//` até o fim da linha.                     |
+| Identifier      | [a-zA-Z_][a-zA-Z0-9_]* | Começa com letra/underscore, seguido de alfanuméricos.        |
+| Int Literal     | [0-9]+                 | Sequência de um ou mais dígitos.                              |
+| Float Literal   | [0-9]*\.[0-9]+         | Dígitos opcionais, ponto, seguidos de dígitos obrigatórios.   |
+| String          | "([^"\n]*)"            | Cadeia entre aspas, sem quebra de linha.                      |
+| Comment (Line)  | \/\/.*                 | Ignora tudo após `//` até o fim da linha.                     |
 
 ## 3 - Implementação com Flex (.l)
 
