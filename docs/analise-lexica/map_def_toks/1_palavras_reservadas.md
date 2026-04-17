@@ -1,12 +1,10 @@
 ---
-title: 1 - Mapeamento e Definição dos Tokens
-parent: Análise Léxica
-nav_order: 2
+title: 1 - Palavras Reservadas
+parent: Mapeamento de Tokens
+nav_order: 1
 ---
 
-# Mapeamento e Definição dos Tokens
-
-## 1 - Palavras Reservadas
+# 1 - Palavras Reservadas
 A seguir, estão todas as palavras reservadas que estarão no escopo do nosso compiladores, junto com a explicação doque cada uma faz
 
 | Palavras Reservadas | Token | Descrição |
@@ -47,7 +45,7 @@ A seguir, estão todas as palavras reservadas que estarão no escopo do nosso co
 | void | TOK_VOID | Indica que uma função não retorna valor ou define um ponteiro genérico. |
 | while | TOK_WHILE | Estrutura de repetição que executa um bloco enquanto a condição for verdadeira. |
 
-### 1.1 - Tipos de Dados
+## 1.1 - Tipos de Dados
 
 Palavras que definem a natureza da informação armazenada em uma variável
 
@@ -67,7 +65,7 @@ Palavras que definem a natureza da informação armazenada em uma variável
 
 - **void:** Indica ausência de tipo ou retorno de função.
 
-### 1.2 -  Fluxo de Controle
+## 1.2 -  Fluxo de Controle
 Comandos que determinam a ordem de execução das instruções do programa.
 
 - **if / else:** Estruturas de decisão condicional.
@@ -82,7 +80,7 @@ Comandos que determinam a ordem de execução das instruções do programa.
 
 - **return:** Finaliza uma função e retorna um valor.
 
-### 1.3 - Específicos C++ e Tokens Especiais
+## 1.3 - Específicos C++ e Tokens Especiais
 Elementos existentes no C++ que não existem no C
 
 - **cin:** Token especial para entrada de dados via stream.
@@ -95,7 +93,7 @@ Elementos existentes no C++ que não existem no C
 
 - **nullptr:** Literal que representa um ponteiro nulo de forma segura.
 
-### 1.4 - Modificadores e Qualificadores
+## 1.4 - Modificadores e Qualificadores
 Palavras que alteram o comportamento ou a visibilidade de variáveis e funções.
 
 - **const:** Define que o valor da variável é imutável.
@@ -108,7 +106,7 @@ Palavras que alteram o comportamento ou a visibilidade de variáveis e funções
 
 - **export:** Usado para exportar declarações em sistemas de módulos.
 
-### 1.5 - Aliases Lógicos e Operadores em Palavra
+## 1.5 - Aliases Lógicos e Operadores em Palavra
 Substitutos textuais para operadores simbólicos e operadores de sistema.
 
 - **and:** Alias para o operador lógico &&.
@@ -119,128 +117,9 @@ Substitutos textuais para operadores simbólicos e operadores de sistema.
 
 - **sizeof:** Operador que retorna o tamanho (em bytes) de um tipo ou objeto.
 
-### 1.6 - Literais Booleanos
+## 1.6 - Literais Booleanos
 Valores constantes para o tipo bool.
 
 - **true:** Representa o valor verdadeiro.
 
 - **false:** Representa o valor falso.
-
-## 2 - Identificadores
-
-Os identificadores representam os nomes definidos pelo programador para dar identidade a elementos do código, como variáveis, funções e namespaces. No nosso projeto, utilizaremos um rótulo genérico para todos eles.
-
-### 2.1 - Tabela de Nomeclatura
-
-| Categoria | Token | Descrição |
-| :--- | :--- | :---: |
-| Identificadores | TOK_ID | Nomes de variáveis, funções, namespaces e tipos definidos pelo usuário. |
-
-### 2.2 - Regras de Formatação
-
-Para que um conjunto de caracteres seja considerado um TOK_ID, ele deve seguir o padrão léxico do C++, que exige que o nome comece obrigatoriamente com uma letra (maiúscula ou minúscula) ou um caractere de sublinhado (_).
-
-- **Exemplos Validos:** MinhaVariabel, soma_valores, std, main, _contador...
-
-- **Padrão Regex:** [a-zA-Z_][a-zA-Z0-9_]*
-
-**Nota:** Identificadores que coincidam com palavras reservadas (como int ou while) serão capturados primeiro pelas regras de palavras reservadas e não como TOK_ID.
-
-### 2.3 - Integração com a Tabela de Símbolos
-
-Diferente dos outros tokens, sempre que o analisador léxico encontrar um TOK_ID, ele deverá realizar uma ação adicional:
-
-1. **Verificação:** Consultar a Tabela de Símbolos para ver se o nome já existe.
-
-2. **Armazenamento:** Se for um nome novo, ele deve ser inserido na tabela junto com seu valor semântico (yytext).
-
-3. **Atributo:** O valor do nome será passado para o analisador sintático através da variável
-
-### 3 - Literais
-
-Os literais são valores fixos escritos diretamente no código-fonte que representam dados constantes. Eles são classificados de acordo com o tipo de dado que representam.
-
-| Tipo de Literal | Token | Exemplos | Descrição |
-| :--- | :--- | :--- | :---: |
-| **Inteiro** | TOK_INT_LIT | 10, 42, 0 | Sequências de dígitos numéricos sem ponto decimal. |
-| **Ponto Flutuante** | TOK_FLOAT_LIT | 2.34, 0.4, 2.0 | Números que contêm uma parte fracionária separada por ponto. |
-| **String** | TOK_STRING_LIT | "Hellow world", "oi" | Sequências de caracteres delimitadas por aspas duplas. |
-| **Caractere** | TOK_CHAR_LIT | 'z', '\n', '\0' | Um único caractere ou sequência de escape entre aspas simples. |
-
-### 3.2 - Regras de Reconhecimento (Regex)
-
-Para o funcionamento no Flex, utilizaremos os seguintes padrões:
-
-- **Inteiros:** [0-9]+
-
-- **Floats:** [0-9]*\.[0-9]+
-
-- **Strings:** "([^"\n]*)" (Cadeias entre aspas, sem permitir quebras de linha diretas)
-
-- **Caracteres:** '(\\.|[^\\'])' (Permite caracteres normais ou sequências de escape como \n ou \t)
-
-### 3.3 - Armazenamento de Valores (yylval)
-Como esses tokens possuem valor semântico, o analisador léxico deve preencher a união yylval antes de retornar o token:
-
-- Para **TOK_INT_LIT**: yylval.ival = atoi(yytext);
-
-- Para **TOK_FLOAT_LIT**: yylval.fval = atof(yytext);
-
-- Para **TOK_STRING_LIT**: yylval.sval = strdup(yytext);
-
-- Para **TOK_CHAR_LIT:** yylval.cval = yytext[1];
-
-## 4 - Operadores e Pontuação
-
-Esta seção mapeia todos os símbolos que realizam operações matemáticas, lógicas e de fluxo, além dos delimitadores estruturais do código.
-
-### 4.1 - Operadores Aritméticos e de Atribuição
-
-| Símbolo | Token | Descrição |
-| :--- | :--- | :---: |
-| + | TOK_PLUS | Operação de adição |
-| - | TOK_MINUS | Operação de subtração |
-| * | TOK_MINUS | Operação de multiplicação |
-| / | TOK_DIV | Operação de divisão |
-| % | TOK_MOD | Operação modular |
-| = | TOK_ASSIGN | Atribuição simples de valor |
-| += | TOK_ADD_ASSIGN | Adição seguida de atribuição |
-| -= | TOK_SUB_ASSIGN | Subtração seguida de atribuição |
-| *= | TOK_MULT_ASSIGN | Multiplicação seguida de atribuição |
-| /= | TOK_DIV_ASSIGN | Divisão seguida de atribuição |
-| %= | TOK_MOD_ASSIGN | Módulo seguido de atribuição |
-
-### 4.2 - Operadores Relacionais e Lógicos
-
-| Símbolo | Token | Descrição |
-| :--- | :--- | :---: |
-| == | TOK_EQ | TOK_LOGIC_NOT |
-| != | TOK_NEQ | Comparação de diferença |
-| < | TOK_LT | Menor que |
-| > | TOK_GT | Maior que |
-| <= | TOK_LE | Menor ou igual a |
-| >= | TOK_GE | Maior ou igual a |
-| && | TOK_LOGIC_AND | Operação lógica "E" |
-| \\ (Reto) | TOK_LOGIC_AND | Operação lógica "OU" |
-| ! | TOK_LOGIC_NOT | Operação lógica de negação |
-
-### 4.3 - Específicos C++ (Stream e Escopo)
-
-| Símbolo | Token | Descrição |
-| :--- | :--- | :---: |
-| << | TOK_OUT | Operador de inserção em stream |
-| >> | TOK_IN | Operador de extração de stream |
-| :: | TOK_SCOPE | Operador de resolução de escopo |
-
-### 4.4 - Pontuação e Delimitadores
-
-| Símbolo | Token | Descrição |
-| :--- | :--- | :---: |
-| ; | TOK_SCOLON | Terminador de instrução |
-| . | TOK_COMMA | Separador de elementos |
-| ( | TOK_LPAREN | Início de expressão ou lista de argumentos |
-| ) | TOK_RPAREN | Fim de expressão ou lista de argumentos |
-| { | TOK_LBRACE | Início de bloco de código |
-| } | TOK_RBRACE | Fim de bloco de código |
-| [ | TOK_LBRACKET | Início de índice de array |
-| ] | TOK_LBRACKET | Fim de índice de array |
