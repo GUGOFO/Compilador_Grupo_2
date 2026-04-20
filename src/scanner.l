@@ -21,6 +21,10 @@ YYSTYPE yylval;
 [ \t\r\n]+        
 "//".* 
 
+ /* 
+   Aqui esta o mapeamento das palavras reservadas, para que ele identifique todas
+ */
+
 "and"           { return TOK_AND; }
 "bool"          { return TOK_BOOL; }
 "break"         { return TOK_BREAK; }
@@ -49,6 +53,53 @@ YYSTYPE yylval;
 "true"          { return TOK_TRUE; }
 "void"          { return TOK_VOID; }
 "while"         { return TOK_WHILE; }
+
+ /* 
+   Aqui tem q estar os operadores com 2 caracteres, para que eles identifiquem primeiro antes
+   dos que estão com 1 caracteres
+ */
+
+"+="            { return TOK_ADD_ASSIGN; }
+"-="            { return TOK_SUB_ASSIGN; }
+"*="            { return TOK_MULT_ASSIGN; }
+"/="            { return TOK_DIV_ASSIGN; }
+"%="            { return TOK_MOD_ASSIGN; }
+"=="            { return TOK_EQ; }
+"!="            { return TOK_NEQ; }
+"<="            { return TOK_LE; }
+">="            { return TOK_GE; }
+"&&"            { return TOK_LOGIC_AND; }
+"||"            { return TOK_LOGIC_OR; }
+
+ /* 
+   Aqui tem todas as reservadas do C++ especificamente 
+ */
+
+"<<"            { return TOK_OUT; }
+">>"            { return TOK_IN; }
+"::"            { return TOK_SCOPE; }
+
+ /* 
+   Operadores e pontuação
+ */
+
+"+"             { return TOK_PLUS; }
+"-"             { return TOK_MINUS; }
+"*"             { return TOK_MULT; }
+"/"             { return TOK_DIV; }
+"%"             { return TOK_MOD; }
+"="             { return TOK_ASSIGN; }
+"<"             { return TOK_LT; }
+">"             { return TOK_GT; }
+"!"             { return TOK_LOGIC_NOT; }
+";"             { return TOK_SCOLON; }
+","             { return TOK_COMMA; }
+"("             { return TOK_LPAREN; }
+")"             { return TOK_RPAREN; }
+"{"             { return TOK_LBRACE; }
+"}"             { return TOK_RBRACE; }
+"["             { return TOK_LBRACKET; }
+"]"             { return TOK_RBRACKET; }
 
 %%
 

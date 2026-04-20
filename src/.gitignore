@@ -3,3 +3,4 @@ lexico_teste
 *.exe
 *.out
 *.o
+*.c
