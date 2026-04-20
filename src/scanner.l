@@ -101,6 +101,15 @@ YYSTYPE yylval;
 "["             { return TOK_LBRACKET; }
 "]"             { return TOK_RBRACKET; }
 
+ /* 
+   identificadores para variaveis, os classiocos "Tokens_ID"
+ */
+
+[a-zA-Z_][a-zA-Z0-9_]* { 
+    yylval.sval = strdup(yytext); 
+    return TOK_ID; 
+}
+
 %%
 
 int main() {
