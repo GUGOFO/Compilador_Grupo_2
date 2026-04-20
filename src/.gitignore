@@ -3,3 +3,5 @@ lexico_teste
 *.exe
 *.out
 *.o
+src/*.tab.c
+src/*.tab.h
