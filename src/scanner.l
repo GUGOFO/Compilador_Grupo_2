@@ -21,3 +21,11 @@ YYSTYPE yylval;
 [ \t\r\n]+        
 "//".* 
 %%
+
+int main() {
+    int token;
+    while ((token = yylex()) != 0) {
+        printf("Token: %d | Lexema: %s\n", token, yytext);
+    }
+    return 0;
+}
