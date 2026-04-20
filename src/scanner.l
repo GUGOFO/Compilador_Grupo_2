@@ -20,6 +20,36 @@ YYSTYPE yylval;
 %%
 [ \t\r\n]+        
 "//".* 
+
+"and"           { return TOK_AND; }
+"bool"          { return TOK_BOOL; }
+"break"         { return TOK_BREAK; }
+"case"          { return TOK_CASE; }
+"char"          { return TOK_CHAR; }
+"cin"           { return TOK_CIN; }
+"continue"      { return TOK_CONTINUE; }
+"cout"          { return TOK_COUT; }
+"default"       { return TOK_DEFAULT; }
+"do"            { return TOK_DO; }
+"double"        { return TOK_DOUBLE; }
+"else"          { return TOK_ELSE; }
+"false"         { return TOK_FALSE; }
+"float"         { return TOK_FLOAT; }
+"for"           { return TOK_FOR; }
+"if"            { return TOK_IF; }
+"int"           { return TOK_INT; }
+"long"          { return TOK_LONG; }
+"not"           { return TOK_NOT; }
+"nullptr"       { return TOK_NULLPTR; }
+"or"            { return TOK_OR; }
+"return"        { return TOK_RETURN; }
+"short"         { return TOK_SHORT; }
+"sizeof"        { return TOK_SIZEOF; }
+"switch"        { return TOK_SWITCH; }
+"true"          { return TOK_TRUE; }
+"void"          { return TOK_VOID; }
+"while"         { return TOK_WHILE; }
+
 %%
 
 int main() {
