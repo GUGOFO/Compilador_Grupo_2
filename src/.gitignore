@@ -1,7 +1,27 @@
+# Ignora o Lexico
 lexico
 lexico_teste
 *.exe
 *.out
+*.app
+
+# ignora objetos 
 *.o
-src/*.tab.c
-src/*.tab.h
+*.obj
+
+# ignora o arquivo arquivo lex.yy.c q é gerado pelo Flex
+lex.yy.c
+
+# ignora o arquivo que o Bison (Parser) gera 
+y.tab.c
+y.tab.h
+y.output
+parser.tab.c
+parser.tab.h
+
+# ignora coisas do sistema caso usem alguma extensão expecifica
+.vscode/
+.replit
+.DS_Store
+dist/
+build/
