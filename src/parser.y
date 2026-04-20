@@ -65,7 +65,7 @@ lista_declaracoes:
 declaracao:
     funcao
     | declaracao_var
-    | TOK_SCOLON /* Caso apareça um ponto e vírgula solto entre funções */
+    | TOK_SCOLON 
     ;
 
 /* Traducao de funcoes: gera o cabecalho e controla o escopo */
@@ -85,7 +85,7 @@ funcao:
 /* Bloco interno de comandos */
 
 lista_comandos:
-    /* Vazio */
+
     | lista_comandos comando
     ;
 
@@ -158,3 +158,17 @@ exp:
     ;
 
 %%
+
+/* FUNCOES DE SUPORTE */
+
+/* Exibe erros de sintaxe e a linha onde ocorreram */
+void yyerror(const char *s) {
+    fprintf(stderr, "Erro na linha %d: %s\n", yylineno, s);
+}
+
+/* Inicia o transpilador e imprime os headers do C */
+int main() {
+    printf("#include <stdio.h>\n#include <stdbool.h>\n\n");
+    return yyparse();
+}
+
