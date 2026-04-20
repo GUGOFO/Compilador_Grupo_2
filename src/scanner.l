@@ -4,6 +4,8 @@
 #include <string.h>
 #include "tokens.h"
 
+int coluna = 1;
+
 typedef union {
     int ival;
     float fval;
@@ -18,120 +20,152 @@ YYSTYPE yylval;
 %option noyywrap
 
 %%
-[ \t\r\n]+        
-"//".* 
+
+"/*" { 
+         int c;
+         while((c = input()) != 0) {
+             if(c == '*') {
+                 if((c = input()) == '/') break;
+                 else unput(c);
+             }
+             else if(c == '\n') coluna = 1; 
+             else coluna++;
+         }
+     }
+
+"//".* { ; }
+
+[ ]+            { coluna += yyleng; } 
+\t              { coluna += 8; }     
+\n              { coluna = 1; }       
+
 
  /* 
    Aqui esta o mapeamento das palavras reservadas, para que ele identifique todas
  */
 
-"and"           { return TOK_AND; }
-"bool"          { return TOK_BOOL; }
-"break"         { return TOK_BREAK; }
-"case"          { return TOK_CASE; }
-"char"          { return TOK_CHAR; }
-"cin"           { return TOK_CIN; }
-"continue"      { return TOK_CONTINUE; }
-"cout"          { return TOK_COUT; }
-"default"       { return TOK_DEFAULT; }
-"do"            { return TOK_DO; }
-"double"        { return TOK_DOUBLE; }
-"else"          { return TOK_ELSE; }
-"false"         { return TOK_FALSE; }
-"float"         { return TOK_FLOAT; }
-"for"           { return TOK_FOR; }
-"if"            { return TOK_IF; }
-"int"           { return TOK_INT; }
-"long"          { return TOK_LONG; }
-"not"           { return TOK_NOT; }
-"nullptr"       { return TOK_NULLPTR; }
-"or"            { return TOK_OR; }
-"return"        { return TOK_RETURN; }
-"short"         { return TOK_SHORT; }
-"sizeof"        { return TOK_SIZEOF; }
-"switch"        { return TOK_SWITCH; }
-"true"          { return TOK_TRUE; }
-"void"          { return TOK_VOID; }
-"while"         { return TOK_WHILE; }
+"and"           { coluna += yyleng; return TOK_AND; }
+"bool"          { coluna += yyleng; return TOK_BOOL; }
+"break"         { coluna += yyleng; return TOK_BREAK; }
+"case"          { coluna += yyleng; return TOK_CASE; }
+"char"          { coluna += yyleng; return TOK_CHAR; }
+"cin"           { coluna += yyleng; return TOK_CIN; }
+"continue"      { coluna += yyleng; return TOK_CONTINUE; }
+"cout"          { coluna += yyleng; return TOK_COUT; }
+"default"       { coluna += yyleng; return TOK_DEFAULT; }
+"do"            { coluna += yyleng; return TOK_DO; }
+"double"        { coluna += yyleng; return TOK_DOUBLE; }
+"else"          { coluna += yyleng; return TOK_ELSE; }
+"false"         { coluna += yyleng; return TOK_FALSE; }
+"float"         { coluna += yyleng; return TOK_FLOAT; }
+"for"           { coluna += yyleng; return TOK_FOR; }
+"if"            { coluna += yyleng; return TOK_IF; }
+"int"           { coluna += yyleng; return TOK_INT; }
+"long"          { coluna += yyleng; return TOK_LONG; }
+"not"           { coluna += yyleng; return TOK_NOT; }
+"nullptr"       { coluna += yyleng; return TOK_NULLPTR; }
+"or"            { coluna += yyleng; return TOK_OR; }
+"return"        { coluna += yyleng; return TOK_RETURN; }
+"short"         { coluna += yyleng; return TOK_SHORT; }
+"sizeof"        { coluna += yyleng; return TOK_SIZEOF; }
+"switch"        { coluna += yyleng; return TOK_SWITCH; }
+"true"          { coluna += yyleng; return TOK_TRUE; }
+"void"          { coluna += yyleng; return TOK_VOID; }
+"while"         { coluna += yyleng; return TOK_WHILE; }
 
  /* 
    Aqui tem q estar os operadores com 2 caracteres, para que eles identifiquem primeiro antes
    dos que estão com 1 caracteres
  */
 
-"+="            { return TOK_ADD_ASSIGN; }
-"-="            { return TOK_SUB_ASSIGN; }
-"*="            { return TOK_MULT_ASSIGN; }
-"/="            { return TOK_DIV_ASSIGN; }
-"%="            { return TOK_MOD_ASSIGN; }
-"=="            { return TOK_EQ; }
-"!="            { return TOK_NEQ; }
-"<="            { return TOK_LE; }
-">="            { return TOK_GE; }
-"&&"            { return TOK_LOGIC_AND; }
-"||"            { return TOK_LOGIC_OR; }
+"+="            { coluna += yyleng; return TOK_ADD_ASSIGN; }
+"-="            { coluna += yyleng; return TOK_SUB_ASSIGN; }
+"*="            { coluna += yyleng; return TOK_MULT_ASSIGN; }
+"/="            { coluna += yyleng; return TOK_DIV_ASSIGN; }
+"%="            { coluna += yyleng; return TOK_MOD_ASSIGN; }
+"=="            { coluna += yyleng; return TOK_EQ; }
+"!="            { coluna += yyleng; return TOK_NEQ; }
+"<="            { coluna += yyleng; return TOK_LE; }
+">="            { coluna += yyleng; return TOK_GE; }
+"&&"            { coluna += yyleng; return TOK_LOGIC_AND; }
+"||"            { coluna += yyleng; return TOK_LOGIC_OR; }
 
  /* 
    Aqui tem todas as reservadas do C++ especificamente 
  */
 
-"<<"            { return TOK_OUT; }
-">>"            { return TOK_IN; }
-"::"            { return TOK_SCOPE; }
+"<<"            { coluna += yyleng; return TOK_OUT; }
+">>"            { coluna += yyleng; return TOK_IN; }
+"::"            { coluna += yyleng; return TOK_SCOPE; }
 
  /* 
    Operadores e pontuação
  */
 
-"+"             { return TOK_PLUS; }
-"-"             { return TOK_MINUS; }
-"*"             { return TOK_MULT; }
-"/"             { return TOK_DIV; }
-"%"             { return TOK_MOD; }
-"="             { return TOK_ASSIGN; }
-"<"             { return TOK_LT; }
-">"             { return TOK_GT; }
-"!"             { return TOK_LOGIC_NOT; }
-";"             { return TOK_SCOLON; }
-","             { return TOK_COMMA; }
-"("             { return TOK_LPAREN; }
-")"             { return TOK_RPAREN; }
-"{"             { return TOK_LBRACE; }
-"}"             { return TOK_RBRACE; }
-"["             { return TOK_LBRACKET; }
-"]"             { return TOK_RBRACKET; }
+"+"             { coluna += yyleng; return TOK_PLUS; }
+"-"             { coluna += yyleng; return TOK_MINUS; }
+"*"             { coluna += yyleng; return TOK_MULT; }
+"/"             { coluna += yyleng; return TOK_DIV; }
+"%"             { coluna += yyleng; return TOK_MOD; }
+"="             { coluna += yyleng; return TOK_ASSIGN; }
+"<"             { coluna += yyleng; return TOK_LT; }
+">"             { coluna += yyleng; return TOK_GT; }
+"!"             { coluna += yyleng; return TOK_LOGIC_NOT; }
+";"             { coluna += yyleng; return TOK_SCOLON; }
+","             { coluna += yyleng; return TOK_COMMA; }
+"("             { coluna += yyleng; return TOK_LPAREN; }
+")"             { coluna += yyleng; return TOK_RPAREN; }
+"{"             { coluna += yyleng; return TOK_LBRACE; }
+"}"             { coluna += yyleng; return TOK_RBRACE; }
+"["             { coluna += yyleng; return TOK_LBRACKET; }
+"]"             { coluna += yyleng; return TOK_RBRACKET; }
+
+ /* 
+   Identifica os valores de INT, FLOAT, CHAR e STRING 
+ */
+
+[0-9]*\.[0-9]+ { 
+    yylval.fval = atof(yytext); 
+    coluna += yyleng;
+    return TOK_FLOAT_LIT; 
+}
+
+[0-9]+ { 
+    yylval.ival = atoi(yytext); 
+    coluna += yyleng;
+    return TOK_INT_LIT; 
+}
+
+\"([^"\\\n]|\\.)*\" { 
+    yylval.sval = strdup(yytext); 
+    coluna += yyleng;
+    return TOK_STRING_LIT; 
+}
+
+'(\\.|[^\\'])' { 
+    yylval.cval = yytext[1]; 
+    coluna += yyleng;
+    return TOK_CHAR_LIT; 
+}
 
  /* 
    identificadores para variaveis, os classiocos "Tokens_ID"
  */
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
-    yylval.sval = strdup(yytext); 
+    yylval.sval = strdup(yytext);
+    // No futuro: inserir_na_tabela(yylval.sval);
+    coluna += yyleng;
     return TOK_ID; 
 }
 
  /* 
-   Identifica os valores de INT, FLOAT, CHAR e STRING 
+   Printar os erros
  */
 
-[0-9]+ { 
-    yylval.ival = atoi(yytext); 
-    return TOK_INT_LIT; 
-}
-
-[0-9]*\.[0-9]+ { 
-    yylval.fval = atof(yytext); 
-    return TOK_FLOAT_LIT; 
-}
-
-\"([^"\\\n]|\\.)*\" { 
-    yylval.sval = strdup(yytext); 
-    return TOK_STRING_LIT; 
-}
-
-'(\\.|[^\\'])' { 
-    yylval.cval = yytext[1]; 
-    return TOK_CHAR_LIT; 
+. { 
+    printf("Erro Léxico na linha %d, coluna %d: caractere '%s' inválido\n", yylineno, coluna, yytext); 
+    coluna++; 
 }
 
 %%
@@ -139,7 +173,8 @@ YYSTYPE yylval;
 int main() {
     int token;
     while ((token = yylex()) != 0) {
-        printf("Token: %d | Lexema: %s\n", token, yytext);
+        printf("Token: %d | Lexema: %s | Linha: %d | Coluna: %d\n", 
+                token, yytext, yylineno, coluna - (int)strlen(yytext));
     }
     return 0;
 }
