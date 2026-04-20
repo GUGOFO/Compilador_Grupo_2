@@ -110,6 +110,30 @@ YYSTYPE yylval;
     return TOK_ID; 
 }
 
+ /* 
+   Identifica os valores de INT, FLOAT, CHAR e STRING 
+ */
+
+[0-9]+ { 
+    yylval.ival = atoi(yytext); 
+    return TOK_INT_LIT; 
+}
+
+[0-9]*\.[0-9]+ { 
+    yylval.fval = atof(yytext); 
+    return TOK_FLOAT_LIT; 
+}
+
+\"([^"\\\n]|\\.)*\" { 
+    yylval.sval = strdup(yytext); 
+    return TOK_STRING_LIT; 
+}
+
+'(\\.|[^\\'])' { 
+    yylval.cval = yytext[1]; 
+    return TOK_CHAR_LIT; 
+}
+
 %%
 
 int main() {
