@@ -28,7 +28,8 @@ int coluna = 1;
 "//".* { ; }
 
 [ ]+            { coluna += yyleng; } 
-\t              { coluna += 8; }     
+\t              { coluna += 8; }
+\r              { ; }
 \n              { coluna = 1; }       
 
 
@@ -60,6 +61,7 @@ int coluna = 1;
 "return"        { coluna += yyleng; return TOK_RETURN; }
 "short"         { coluna += yyleng; return TOK_SHORT; }
 "sizeof"        { coluna += yyleng; return TOK_SIZEOF; }
+"std"           { coluna += yyleng; return TOK_STD; }
 "switch"        { coluna += yyleng; return TOK_SWITCH; }
 "true"          { coluna += yyleng; return TOK_TRUE; }
 "void"          { coluna += yyleng; return TOK_VOID; }

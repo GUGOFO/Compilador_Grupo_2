@@ -37,6 +37,7 @@ int nivel_atual = 0;
 %token TOK_COUT TOK_CIN TOK_RETURN TOK_IF TOK_ELSE TOK_WHILE TOK_FOR TOK_DO
 %token TOK_BREAK TOK_CONTINUE TOK_SWITCH TOK_CASE TOK_DEFAULT TOK_SIZEOF
 %token TOK_AND TOK_OR TOK_NOT TOK_TRUE TOK_FALSE TOK_NULLPTR
+%token TOK_STD TOK_ENDL
 
 /* Tokens de Operadores e Pontuação */
 
@@ -115,17 +116,29 @@ lista_comandos:
 
 comando:
     comando_cout
+    | comando_cin
     | declaracao_var
     | comando_return
     | TOK_SCOLON
     ;
 
-/* Converte cout << para printf */
+/* Converte cout << para printf e cin >> para scanf*/
 
 comando_cout:
-    TOK_COUT TOK_OUT exp TOK_SCOLON {
+    TOK_STD TOK_SCOPE TOK_COUT TOK_OUT exp TOK_SCOLON {
         print_indent(nivel_atual);
-        printf("printf(\"%%g\\n\", %s);\n", $3);
+        if ($5[0] == '"') {
+            printf("printf(%s);\n", $5);
+        } else {
+            printf("printf(\"%%g\\n\", %s);\n", $5);
+        }
+    }
+    ;
+
+comando_cin:
+    TOK_STD TOK_SCOPE TOK_CIN TOK_IN TOK_ID TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("scanf(\"%%g\", &%s);\n", $5);
     }
     ;
 

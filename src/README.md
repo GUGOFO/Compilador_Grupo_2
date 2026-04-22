@@ -8,8 +8,10 @@ Arquivo reservado para o codigo do projeto
 
 2. Caso esteja no windows, ative o WSL
 
+3. rode "bison -d parser.y
+
 3. rode "flex scanner.l"
 
-4. rode "gcc lex.yy.c -o lexico"
+4. rode "gcc parser.tab.c lex.yy.c -o transpilador -lfl"
 
-5. rode "./lexico"
+5. rode "./transpilador < exemplo_entrada.c++ > saida.c"
