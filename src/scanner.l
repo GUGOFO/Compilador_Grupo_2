@@ -117,7 +117,7 @@ int coluna = 1;
    Identifica os valores de INT, FLOAT, CHAR e STRING 
  */
 
-[0-9]+(\.[0-9]+)? { 
+[0-9]*\.[0-9]+ { 
     yylval.fval = atof(yytext); 
     coluna += yyleng;
     return TOK_FLOAT_LIT; 
