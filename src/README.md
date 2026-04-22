@@ -8,7 +8,7 @@ Arquivo reservado para o codigo do projeto
 
 2. Caso esteja no windows, ative o WSL
 
-3. rode "bison -d parser.y
+3. rode "bison -d parser.y"
 
 3. rode "flex scanner.l"
 

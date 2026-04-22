@@ -14,16 +14,16 @@ int coluna = 1;
 %%
 
 "/*" { 
-         int c;
-         while((c = input()) != 0) {
-             if(c == '*') {
-                 if((c = input()) == '/') break;
-                 else unput(c);
-             }
-             else if(c == '\n') coluna = 1; 
-             else coluna++;
-         }
-     }
+    int c;
+    while((c = input()) != 0 && c != EOF) {
+        if(c == '*') {
+            if((c = input()) == '/') break;
+            else unput(c);
+        }
+        else if(c == '\n') coluna = 1;
+        else coluna++;
+    }
+}
 
 "//".* { ; }
 
@@ -117,7 +117,7 @@ int coluna = 1;
    Identifica os valores de INT, FLOAT, CHAR e STRING 
  */
 
-[0-9]*\.[0-9]+ { 
+[0-9]+(\.[0-9]+)? { 
     yylval.fval = atof(yytext); 
     coluna += yyleng;
     return TOK_FLOAT_LIT; 
@@ -136,6 +136,15 @@ int coluna = 1;
 }
 
 '(\\.|[^\\'])' { 
+    if (yytext[1] == '\\') {
+        switch(yytext[2]) {
+            case 'n': yylval.ival = '\n'; break;
+            case 't': yylval.ival = '\t'; break;
+            default:  yylval.ival = yytext[2]; break;
+        }
+    } else {
+        yylval.ival = yytext[1];
+    }
     coluna += yyleng;
     return TOK_CHAR_LIT; 
 }
