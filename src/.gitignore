@@ -1,4 +1,5 @@
 # Ignora o Lexico
+transpilador
 lexico
 lexico_teste
 *.exe
@@ -18,6 +19,9 @@ y.tab.h
 y.output
 parser.tab.c
 parser.tab.h
+
+# ignora saidas
+saida.c
 
 # ignora coisas do sistema caso usem alguma extensão expecifica
 .vscode/
