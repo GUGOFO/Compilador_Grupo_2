@@ -581,20 +581,12 @@ char *yytext;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tokens.h"
+#include "parser.tab.h"
 
 int coluna = 1;
 
-typedef union {
-    int ival;
-    float fval;
-    char cval;
-    char *sval;
-} YYSTYPE;
-
-YYSTYPE yylval; 
-#line 597 "lex.yy.c"
-#line 598 "lex.yy.c"
+#line 589 "lex.yy.c"
+#line 590 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -811,10 +803,10 @@ YY_DECL
 		}
 
 	{
-#line 22 "scanner.l"
+#line 14 "scanner.l"
 
 
-#line 818 "lex.yy.c"
+#line 810 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -883,7 +875,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 24 "scanner.l"
+#line 16 "scanner.l"
 { 
          int c;
          while((c = input()) != 0) {
@@ -898,23 +890,23 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 36 "scanner.l"
+#line 28 "scanner.l"
 { ; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 38 "scanner.l"
+#line 30 "scanner.l"
 { coluna += yyleng; } 
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 39 "scanner.l"
+#line 31 "scanner.l"
 { coluna += 8; }     
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 40 "scanner.l"
+#line 32 "scanner.l"
 { coluna = 1; }       
 	YY_BREAK
 /* 
@@ -922,201 +914,200 @@ YY_RULE_SETUP
  */
 case 6:
 YY_RULE_SETUP
-#line 47 "scanner.l"
+#line 39 "scanner.l"
 { coluna += yyleng; return TOK_AND; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 48 "scanner.l"
+#line 40 "scanner.l"
 { coluna += yyleng; return TOK_BOOL; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 49 "scanner.l"
+#line 41 "scanner.l"
 { coluna += yyleng; return TOK_BREAK; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 50 "scanner.l"
+#line 42 "scanner.l"
 { coluna += yyleng; return TOK_CASE; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 51 "scanner.l"
+#line 43 "scanner.l"
 { coluna += yyleng; return TOK_CHAR; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 52 "scanner.l"
+#line 44 "scanner.l"
 { coluna += yyleng; return TOK_CIN; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 53 "scanner.l"
+#line 45 "scanner.l"
 { coluna += yyleng; return TOK_CONTINUE; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 54 "scanner.l"
+#line 46 "scanner.l"
 { coluna += yyleng; return TOK_COUT; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 55 "scanner.l"
+#line 47 "scanner.l"
 { coluna += yyleng; return TOK_DEFAULT; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 56 "scanner.l"
+#line 48 "scanner.l"
 { coluna += yyleng; return TOK_DO; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 57 "scanner.l"
+#line 49 "scanner.l"
 { coluna += yyleng; return TOK_DOUBLE; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 58 "scanner.l"
+#line 50 "scanner.l"
 { coluna += yyleng; return TOK_ELSE; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 59 "scanner.l"
+#line 51 "scanner.l"
 { coluna += yyleng; return TOK_FALSE; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 60 "scanner.l"
+#line 52 "scanner.l"
 { coluna += yyleng; return TOK_FLOAT; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 61 "scanner.l"
+#line 53 "scanner.l"
 { coluna += yyleng; return TOK_FOR; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 62 "scanner.l"
+#line 54 "scanner.l"
 { coluna += yyleng; return TOK_IF; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 63 "scanner.l"
+#line 55 "scanner.l"
 { coluna += yyleng; return TOK_INT; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 64 "scanner.l"
+#line 56 "scanner.l"
 { coluna += yyleng; return TOK_LONG; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 65 "scanner.l"
+#line 57 "scanner.l"
 { coluna += yyleng; return TOK_NOT; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 66 "scanner.l"
+#line 58 "scanner.l"
 { coluna += yyleng; return TOK_NULLPTR; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 67 "scanner.l"
+#line 59 "scanner.l"
 { coluna += yyleng; return TOK_OR; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 68 "scanner.l"
+#line 60 "scanner.l"
 { coluna += yyleng; return TOK_RETURN; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 69 "scanner.l"
+#line 61 "scanner.l"
 { coluna += yyleng; return TOK_SHORT; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 70 "scanner.l"
+#line 62 "scanner.l"
 { coluna += yyleng; return TOK_SIZEOF; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 71 "scanner.l"
+#line 63 "scanner.l"
 { coluna += yyleng; return TOK_SWITCH; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 72 "scanner.l"
+#line 64 "scanner.l"
 { coluna += yyleng; return TOK_TRUE; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 73 "scanner.l"
+#line 65 "scanner.l"
 { coluna += yyleng; return TOK_VOID; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 74 "scanner.l"
+#line 66 "scanner.l"
 { coluna += yyleng; return TOK_WHILE; }
 	YY_BREAK
 /* 
-   Aqui tem q estar os operadores com 2 caracteres, para que eles identifiquem primeiro antes
-   dos que estão com 1 caracteres
+   Aqui tem q estar os operadores com 2 caracteres, para que eles identifiquem primeiro antes dos que estão com 1 caracteres
  */
 case 34:
 YY_RULE_SETUP
-#line 81 "scanner.l"
+#line 72 "scanner.l"
 { coluna += yyleng; return TOK_ADD_ASSIGN; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 82 "scanner.l"
+#line 73 "scanner.l"
 { coluna += yyleng; return TOK_SUB_ASSIGN; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 83 "scanner.l"
+#line 74 "scanner.l"
 { coluna += yyleng; return TOK_MULT_ASSIGN; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 84 "scanner.l"
+#line 75 "scanner.l"
 { coluna += yyleng; return TOK_DIV_ASSIGN; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 85 "scanner.l"
+#line 76 "scanner.l"
 { coluna += yyleng; return TOK_MOD_ASSIGN; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 86 "scanner.l"
+#line 77 "scanner.l"
 { coluna += yyleng; return TOK_EQ; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 87 "scanner.l"
+#line 78 "scanner.l"
 { coluna += yyleng; return TOK_NEQ; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 88 "scanner.l"
+#line 79 "scanner.l"
 { coluna += yyleng; return TOK_LE; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 89 "scanner.l"
+#line 80 "scanner.l"
 { coluna += yyleng; return TOK_GE; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 90 "scanner.l"
+#line 81 "scanner.l"
 { coluna += yyleng; return TOK_LOGIC_AND; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 91 "scanner.l"
+#line 82 "scanner.l"
 { coluna += yyleng; return TOK_LOGIC_OR; }
 	YY_BREAK
 /* 
@@ -1124,17 +1115,17 @@ YY_RULE_SETUP
  */
 case 45:
 YY_RULE_SETUP
-#line 97 "scanner.l"
+#line 88 "scanner.l"
 { coluna += yyleng; return TOK_OUT; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 98 "scanner.l"
+#line 89 "scanner.l"
 { coluna += yyleng; return TOK_IN; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 99 "scanner.l"
+#line 90 "scanner.l"
 { coluna += yyleng; return TOK_SCOPE; }
 	YY_BREAK
 /* 
@@ -1142,87 +1133,87 @@ YY_RULE_SETUP
  */
 case 48:
 YY_RULE_SETUP
-#line 105 "scanner.l"
+#line 96 "scanner.l"
 { coluna += yyleng; return TOK_PLUS; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 106 "scanner.l"
+#line 97 "scanner.l"
 { coluna += yyleng; return TOK_MINUS; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 107 "scanner.l"
+#line 98 "scanner.l"
 { coluna += yyleng; return TOK_MULT; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 108 "scanner.l"
+#line 99 "scanner.l"
 { coluna += yyleng; return TOK_DIV; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 109 "scanner.l"
+#line 100 "scanner.l"
 { coluna += yyleng; return TOK_MOD; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 110 "scanner.l"
+#line 101 "scanner.l"
 { coluna += yyleng; return TOK_ASSIGN; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 111 "scanner.l"
+#line 102 "scanner.l"
 { coluna += yyleng; return TOK_LT; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 112 "scanner.l"
+#line 103 "scanner.l"
 { coluna += yyleng; return TOK_GT; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 113 "scanner.l"
+#line 104 "scanner.l"
 { coluna += yyleng; return TOK_LOGIC_NOT; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 114 "scanner.l"
+#line 105 "scanner.l"
 { coluna += yyleng; return TOK_SCOLON; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 115 "scanner.l"
+#line 106 "scanner.l"
 { coluna += yyleng; return TOK_COMMA; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 116 "scanner.l"
+#line 107 "scanner.l"
 { coluna += yyleng; return TOK_LPAREN; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 117 "scanner.l"
+#line 108 "scanner.l"
 { coluna += yyleng; return TOK_RPAREN; }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 118 "scanner.l"
+#line 109 "scanner.l"
 { coluna += yyleng; return TOK_LBRACE; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 119 "scanner.l"
+#line 110 "scanner.l"
 { coluna += yyleng; return TOK_RBRACE; }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 120 "scanner.l"
+#line 111 "scanner.l"
 { coluna += yyleng; return TOK_LBRACKET; }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 121 "scanner.l"
+#line 112 "scanner.l"
 { coluna += yyleng; return TOK_RBRACKET; }
 	YY_BREAK
 /* 
@@ -1230,7 +1221,7 @@ YY_RULE_SETUP
  */
 case 65:
 YY_RULE_SETUP
-#line 127 "scanner.l"
+#line 118 "scanner.l"
 { 
     yylval.fval = atof(yytext); 
     coluna += yyleng;
@@ -1239,7 +1230,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 133 "scanner.l"
+#line 124 "scanner.l"
 { 
     yylval.ival = atoi(yytext); 
     coluna += yyleng;
@@ -1248,7 +1239,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 139 "scanner.l"
+#line 130 "scanner.l"
 { 
     yylval.sval = strdup(yytext); 
     coluna += yyleng;
@@ -1258,9 +1249,8 @@ YY_RULE_SETUP
 case 68:
 /* rule 68 can match eol */
 YY_RULE_SETUP
-#line 145 "scanner.l"
+#line 136 "scanner.l"
 { 
-    yylval.cval = yytext[1]; 
     coluna += yyleng;
     return TOK_CHAR_LIT; 
 }
@@ -1270,10 +1260,9 @@ YY_RULE_SETUP
  */
 case 69:
 YY_RULE_SETUP
-#line 155 "scanner.l"
+#line 145 "scanner.l"
 { 
     yylval.sval = strdup(yytext);
-    // No futuro: inserir_na_tabela(yylval.sval);
     coluna += yyleng;
     return TOK_ID; 
 }
@@ -1283,7 +1272,7 @@ YY_RULE_SETUP
  */
 case 70:
 YY_RULE_SETUP
-#line 166 "scanner.l"
+#line 155 "scanner.l"
 { 
     printf("Erro Léxico na linha %d, coluna %d: caractere '%s' inválido\n", yylineno, coluna, yytext); 
     coluna++; 
@@ -1291,10 +1280,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 171 "scanner.l"
+#line 160 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1298 "lex.yy.c"
+#line 1287 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2311,14 +2300,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 171 "scanner.l"
+#line 160 "scanner.l"
 
-
-int main() {
-    int token;
-    while ((token = yylex()) != 0) {
-        printf("Token: %d | Lexema: %s | Linha: %d | Coluna: %d\n", 
-                token, yytext, yylineno, coluna - (int)strlen(yytext));
-    }
-    return 0;
-}

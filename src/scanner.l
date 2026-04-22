@@ -2,18 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tokens.h"
+#include "parser.tab.h"
 
 int coluna = 1;
 
-typedef union {
-    int ival;
-    float fval;
-    char cval;
-    char *sval;
-} YYSTYPE;
-
-YYSTYPE yylval; 
 %}
 
 %option yylineno
@@ -74,8 +66,7 @@ YYSTYPE yylval;
 "while"         { coluna += yyleng; return TOK_WHILE; }
 
  /* 
-   Aqui tem q estar os operadores com 2 caracteres, para que eles identifiquem primeiro antes
-   dos que estão com 1 caracteres
+   Aqui tem q estar os operadores com 2 caracteres, para que eles identifiquem primeiro antes dos que estão com 1 caracteres
  */
 
 "+="            { coluna += yyleng; return TOK_ADD_ASSIGN; }
@@ -143,7 +134,6 @@ YYSTYPE yylval;
 }
 
 '(\\.|[^\\'])' { 
-    yylval.cval = yytext[1]; 
     coluna += yyleng;
     return TOK_CHAR_LIT; 
 }
@@ -154,7 +144,6 @@ YYSTYPE yylval;
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
     yylval.sval = strdup(yytext);
-    // No futuro: inserir_na_tabela(yylval.sval);
     coluna += yyleng;
     return TOK_ID; 
 }
@@ -169,12 +158,3 @@ YYSTYPE yylval;
 }
 
 %%
-
-int main() {
-    int token;
-    while ((token = yylex()) != 0) {
-        printf("Token: %d | Lexema: %s | Linha: %d | Coluna: %d\n", 
-                token, yytext, yylineno, coluna - (int)strlen(yytext));
-    }
-    return 0;
-}

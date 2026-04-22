@@ -11,7 +11,6 @@ void yyerror(const char *s);
 extern int yylineno; 
 extern char* yytext; 
 
-
 void print_indent(int nivel) {
     for(int i = 0; i < nivel; i++) printf("    ");
 }
@@ -22,32 +21,46 @@ int nivel_atual = 0;
 
 %union {
     int ival;     
+    float fval;
     char *sval;   
 }
 
 /* Tokens com Valor Semântico: */
 
 %token <sval> TOK_ID TOK_STRING_LIT
-%token <ival> TOK_INT_LIT
+%token <ival> TOK_INT_LIT TOK_CHAR_LIT
+%token <fval> TOK_FLOAT_LIT
 
-/* Tokens de Estrutura: */
+/* Tokens de Palavras Reservadas (Keywords) */
 
-%token TOK_VOID TOK_INT TOK_FLOAT TOK_BOOL
-%token TOK_COUT TOK_OUT TOK_SCOLON TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE
-%token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV
-%token TOK_RETURN 
+%token TOK_VOID TOK_INT TOK_FLOAT TOK_DOUBLE TOK_BOOL TOK_LONG TOK_SHORT TOK_CHAR
+%token TOK_COUT TOK_CIN TOK_RETURN TOK_IF TOK_ELSE TOK_WHILE TOK_FOR TOK_DO
+%token TOK_BREAK TOK_CONTINUE TOK_SWITCH TOK_CASE TOK_DEFAULT TOK_SIZEOF
+%token TOK_AND TOK_OR TOK_NOT TOK_TRUE TOK_FALSE TOK_NULLPTR
 
-/* Precedência e Associatividade: */
+/* Tokens de Operadores e Pontuação */
 
+%token TOK_OUT TOK_IN TOK_SCOLON TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE
+%token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE
+%token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD
+%token TOK_EQ TOK_NEQ TOK_LT TOK_GT TOK_LE TOK_GE
+%token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
+%token TOK_ADD_ASSIGN TOK_SUB_ASSIGN TOK_MULT_ASSIGN TOK_DIV_ASSIGN TOK_MOD_ASSIGN
+
+/* DEFINIÇÃO DE PRECEDÊNCIA */
+%left TOK_LOGIC_OR
+%left TOK_LOGIC_AND
+%left TOK_EQ TOK_NEQ
+%left TOK_LT TOK_GT TOK_LE TOK_GE
 %left TOK_PLUS TOK_MINUS
-%left TOK_MULT TOK_DIV
+%left TOK_MULT TOK_DIV TOK_MOD
+%right TOK_LOGIC_NOT
 
-/* Definição de Tipos para Não-Terminais: */
+/* Definição de tipos para os Não-Terminais da Gramática */
+%type <sval> exp tipo
 
-%type <sval> exp
 
-
-/* SEÇÃO DE REGRAS */
+/* SEÇÃO DE REGRAS GRAMATICAIS*/
 
 %%
 
@@ -71,8 +84,8 @@ declaracao:
 /* Traducao de funcoes: gera o cabecalho e controla o escopo */
 
 funcao:
-    TOK_INT TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
-        printf("int %s() {\n", $2);
+    tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
+        printf("%s %s() {\n", $1, $2);
         nivel_atual++; 
     }
     lista_comandos TOK_RBRACE {
@@ -80,6 +93,17 @@ funcao:
         print_indent(nivel_atual);
         printf("}\n");
     }
+    ;
+
+tipo:
+    TOK_INT      { $$ = "int"; }
+    | TOK_FLOAT  { $$ = "float"; }
+    | TOK_DOUBLE { $$ = "double"; }
+    | TOK_BOOL   { $$ = "bool"; }
+    | TOK_VOID   { $$ = "void"; }
+    | TOK_CHAR   { $$ = "char"; }
+    | TOK_LONG   { $$ = "long"; }
+    | TOK_SHORT  { $$ = "short"; }
     ;
 
 /* Bloco interno de comandos */
@@ -93,6 +117,7 @@ comando:
     comando_cout
     | declaracao_var
     | comando_return
+    | TOK_SCOLON
     ;
 
 /* Converte cout << para printf */
@@ -100,20 +125,20 @@ comando:
 comando_cout:
     TOK_COUT TOK_OUT exp TOK_SCOLON {
         print_indent(nivel_atual);
-        printf("printf(\"%%d\\n\", %s);\n", $3);
+        printf("printf(\"%%g\\n\", %s);\n", $3);
     }
     ;
 
 /* Traducao de declaracao de variaveis */
 
 declaracao_var:
-    TOK_INT TOK_ID TOK_ASSIGN exp TOK_SCOLON {
+    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
         print_indent(nivel_atual);
-        printf("int %s = %s;\n", $2, $4);
+        printf("%s %s = %s;\n", $1, $2, $4);
     }
-    | TOK_INT TOK_ID TOK_SCOLON {
+    | tipo TOK_ID TOK_SCOLON {
         print_indent(nivel_atual);
-        printf("int %s;\n", $2);
+        printf("%s %s;\n", $1, $2);
     }
     ;
 
@@ -134,26 +159,36 @@ exp:
         sprintf(buf, "%d", $1);
         $$ = strdup(buf);
     }
+    | TOK_FLOAT_LIT {
+        char buf[50];
+        sprintf(buf, "%g", $1);
+        $$ = strdup(buf);
+    }
     | TOK_ID {
         $$ = strdup($1);
     }
+    | TOK_STRING_LIT {
+        $$ = strdup($1);
+    }
     | exp TOK_PLUS exp {
-        char buf[256];
+        char buf[512];
         sprintf(buf, "%s + %s", $1, $3);
         $$ = strdup(buf);
     }
     | exp TOK_MULT exp {
-        char buf[256];
+        char buf[512];
         sprintf(buf, "%s * %s", $1, $3);
         $$ = strdup(buf);
     }
-    | TOK_LPAREN exp TOK_RPAREN {
-        char buf[256];
-        sprintf(buf, "(%s)", $2);
+    | exp TOK_EQ exp {
+        char buf[512];
+        sprintf(buf, "%s == %s", $1, $3);
         $$ = strdup(buf);
     }
-    | TOK_STRING_LIT {
-        $$ = strdup($1);
+    | TOK_LPAREN exp TOK_RPAREN {
+        char buf[512];
+        sprintf(buf, "(%s)", $2);
+        $$ = strdup(buf);
     }
     ;
 
@@ -161,14 +196,21 @@ exp:
 
 /* FUNCOES DE SUPORTE */
 
-/* Exibe erros de sintaxe e a linha onde ocorreram */
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro na linha %d: %s\n", yylineno, s);
+    fprintf(stderr, "Erro de Sintaxe na linha %d: %s (perto de '%s')\n", yylineno, s, yytext);
 }
 
 /* Inicia o transpilador e imprime os headers do C */
 int main() {
-    printf("#include <stdio.h>\n#include <stdbool.h>\n\n");
-    return yyparse();
+
+    /* Adiciona os headers necessários no topo do ficheiro C gerado */
+    printf("#include <stdio.h>\n");
+    printf("#include <stdbool.h>\n\n");
+    
+    /* Inicia o processo de parsing */
+    if (yyparse() == 0) {
+        fprintf(stderr, "Transpilação concluída com sucesso!\n");
+    }
+    return 0;
 }
 
