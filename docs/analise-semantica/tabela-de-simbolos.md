@@ -89,3 +89,55 @@ int main() {
     return x; // usa o x do nível 1, que vale 5
 }
 ```
+
+## Como ficaria no parser.y do projeto
+
+O `parser.y` atual é um transpilador puro — traduz C++ pra C sem verificar nenhuma semântica. Pra adicionar a tabela de símbolos, as verificações seriam colocadas diretamente nas ações das regras gramaticais que já existem:
+
+**Na declaração de variável:**
+```c
+declaracao_var:
+    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
+        if (buscar_simbolo_no_escopo_atual($2) != NULL)
+            yyerror("variável já declarada neste escopo");
+
+        inserir_simbolo($2, $1, nivel_atual, yylineno, 1, $4);
+
+        print_indent(nivel_atual);
+        printf("%s %s = %s;\n", $1, $2, $4);
+    }
+```
+
+**No uso de um identificador em expressão:**
+```c
+exp:
+    TOK_ID {
+        Simbolo *s = buscar_simbolo($1);
+        if (s == NULL)
+            yyerror("identificador não declarado");
+
+        $$ = strdup($1);
+    }
+```
+
+**Na declaração de função:**
+```c
+funcao:
+    tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
+        inserir_simbolo($2, $1, 0, yylineno, 1, NULL);
+        entrar_escopo();
+        printf("%s %s() {\n", $1, $2);
+        nivel_atual++;
+    }
+    lista_comandos TOK_RBRACE {
+        sair_escopo();
+        nivel_atual--;
+        print_indent(nivel_atual);
+        printf("}\n");
+    }
+```
+
+## Bibliografia:
+
+- https://pgrandinetti-github-io.translate.goog/compilers/page/what-is-semantic-analysis-in-compilers/?_x_tr_sl=en&_x_tr_tl=pt&_x_tr_hl=pt&_x_tr_pto=tc
+- Aho, A. V.; Lam, M. S.; Sethi, R.; Ullman, J. D. **Compiladores: Princípios, Técnicas e Ferramentas** (Livro do Dragão). 2ª ed. Pearson, 2008.

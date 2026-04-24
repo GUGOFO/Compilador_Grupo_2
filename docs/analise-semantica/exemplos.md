@@ -75,3 +75,8 @@ int y = x + 1;
 ```
 
 `x` foi declarada mas nunca recebeu um valor. Usar uma variável não inicializada é um comportamento indefinido em C++, então o analisador semântico lança um aviso (ou erro, dependendo da implementação).
+
+## Bibliografia:
+
+- https://pgrandinetti-github-io.translate.goog/compilers/page/what-is-semantic-analysis-in-compilers/?_x_tr_sl=en&_x_tr_tl=pt&_x_tr_hl=pt&_x_tr_pto=tc
+- Aho, A. V.; Lam, M. S.; Sethi, R.; Ullman, J. D. **Compiladores: Princípios, Técnicas e Ferramentas** (Livro do Dragão). 2ª ed. Pearson, 2008.
