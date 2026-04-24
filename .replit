@@ -1,0 +1,25 @@
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo '=== Compilador_Grupo_2 ===' && echo 'Documentação GitHub Pages em: docs/' && echo 'Código fonte em: src/' && echo 'Testes em: tests/'"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[agent]
+expertMode = true
