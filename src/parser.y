@@ -47,17 +47,17 @@ int escopo_atual = 0;
 %token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE
 %token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD
 %token TOK_EQ TOK_NEQ TOK_LT TOK_GT TOK_LE TOK_GE
-%token TOK_AND TOK_OR TOK_NOT
+%token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
 %token TOK_ADD_ASSIGN TOK_SUB_ASSIGN TOK_MULT_ASSIGN TOK_DIV_ASSIGN TOK_MOD_ASSIGN
 
 /* DEFINIÇÃO DE PRECEDÊNCIA */
-%left TOK_OR
-%left TOK_AND
+%left TOK_LOGIC_OR
+%left TOK_LOGIC_AND
 %left TOK_EQ TOK_NEQ
 %left TOK_LT TOK_GT TOK_LE TOK_GE
 %left TOK_PLUS TOK_MINUS
 %left TOK_MULT TOK_DIV TOK_MOD
-%right TOK_NOT
+%right TOK_LOGIC_NOT
 
 /* Definição de tipos para os Não-Terminais da Gramática */
 %type <sval> exp tipo
@@ -154,10 +154,12 @@ comando_cin:
 
 declaracao_var:
     tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
+        inserirSimbolo($2, $1, escopo_atual);
         print_indent(nivel_atual);
         printf("%s %s = %s;\n", $1, $2, $4);
     }
     | tipo TOK_ID TOK_SCOLON {
+        inserirSimbolo($2, $1, escopo_atual);
         print_indent(nivel_atual);
         printf("%s %s;\n", $1, $2);
     }
@@ -190,7 +192,7 @@ comando_atribuicao:
 
 comando_if:
     TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE {
-        print_ident(nivel_atual);
+        print_indent(nivel_atual);
         printf("if (%s) {\n", $3);
         nivel_atual++;
         escopo_atual++;
@@ -206,7 +208,7 @@ comando_if:
     /* Tratamento do ELSE */
 
     | comando_if TOK_ELSE TOK_LBRACE {
-        print_ident(nivel_atual);
+        print_indent(nivel_atual);
         printf("else {\n");
         nivel_atual++;
         escopo_atual++;
@@ -266,7 +268,7 @@ exp:
         $$ = strdup("1");
     }
     | TOK_FALSE {
-        $$ = strdup("0);
+        $$ = strdup("0");
     }
     | TOK_NULLPTR {
         $$ = strdup("NULL");
@@ -326,17 +328,17 @@ exp:
         sprintf(buf, "%s >= %s", $1, $3);
         $$ = strdup(buf);
     }
-    | exp TOK_AND exp {
+    | exp TOK_LOGIC_AND exp {
         char buf[512];
         sprintf(buf, "%s && %s", $1, $3);
         $$ = strdup(buf);
     }
-    | exp TOK_OR exp {
+    | exp TOK_LOGIC_OR exp {
         char buf[512];
         sprintf(buf, "%s || %s", $1, $3);
         $$ = strdup(buf);
     }
-    | TOK_NOT exp {
+    | TOK_LOGIC_NOT exp {
         char buf[512];
         sprintf(buf, "!%s", $2);
         $$ = strdup(buf);
