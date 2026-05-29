@@ -37,7 +37,7 @@ int coluna = 1;
    Aqui esta o mapeamento das palavras reservadas, para que ele identifique todas
  */
 
-"and"           { coluna += yyleng; return TOK_AND; }
+"and"           { coluna += yyleng; return TOK_LOGIC_AND; }
 "bool"          { coluna += yyleng; return TOK_BOOL; }
 "break"         { coluna += yyleng; return TOK_BREAK; }
 "case"          { coluna += yyleng; return TOK_CASE; }
@@ -55,9 +55,9 @@ int coluna = 1;
 "if"            { coluna += yyleng; return TOK_IF; }
 "int"           { coluna += yyleng; return TOK_INT; }
 "long"          { coluna += yyleng; return TOK_LONG; }
-"not"           { coluna += yyleng; return TOK_NOT; }
+"not"           { coluna += yyleng; return TOK_LOGIC_NOT; }
 "nullptr"       { coluna += yyleng; return TOK_NULLPTR; }
-"or"            { coluna += yyleng; return TOK_OR; }
+"or"            { coluna += yyleng; return TOK_LOGIC_OR; }
 "return"        { coluna += yyleng; return TOK_RETURN; }
 "short"         { coluna += yyleng; return TOK_SHORT; }
 "sizeof"        { coluna += yyleng; return TOK_SIZEOF; }
