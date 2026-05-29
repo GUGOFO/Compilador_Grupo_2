@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tabela.h"
 
 
 int yylex(void); 
@@ -15,6 +16,7 @@ void print_indent(int nivel) {
     for(int i = 0; i < nivel; i++) printf("    ");
 }
 int nivel_atual = 0;
+int escopo_atual = 0;
 %}
 
 /* SEÇÃO DE DEFINIÇÕES */
@@ -45,17 +47,17 @@ int nivel_atual = 0;
 %token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE
 %token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD
 %token TOK_EQ TOK_NEQ TOK_LT TOK_GT TOK_LE TOK_GE
-%token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
+%token TOK_AND TOK_OR TOK_NOT
 %token TOK_ADD_ASSIGN TOK_SUB_ASSIGN TOK_MULT_ASSIGN TOK_DIV_ASSIGN TOK_MOD_ASSIGN
 
 /* DEFINIÇÃO DE PRECEDÊNCIA */
-%left TOK_LOGIC_OR
-%left TOK_LOGIC_AND
+%left TOK_OR
+%left TOK_AND
 %left TOK_EQ TOK_NEQ
 %left TOK_LT TOK_GT TOK_LE TOK_GE
 %left TOK_PLUS TOK_MINUS
 %left TOK_MULT TOK_DIV TOK_MOD
-%right TOK_LOGIC_NOT
+%right TOK_NOT
 
 /* Definição de tipos para os Não-Terminais da Gramática */
 %type <sval> exp tipo
@@ -87,9 +89,12 @@ declaracao:
 funcao:
     tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
         printf("%s %s() {\n", $1, $2);
-        nivel_atual++; 
+        nivel_atual++;
+        escopo_atual++;
     }
     lista_comandos TOK_RBRACE {
+        removerEscopo(escopo_atual);
+        escopo_atual--;
         nivel_atual--;
         print_indent(nivel_atual);
         printf("}\n");
@@ -119,6 +124,9 @@ comando:
     | comando_cin
     | declaracao_var
     | comando_return
+    | comando_atribuicao
+    | comando_if
+    | comando_while
     | TOK_SCOLON
     ;
 
@@ -164,6 +172,72 @@ comando_return:
     }
     ;
 
+/* Permite a atribuição de valor a uma variável */
+
+comando_atribuicao:
+    TOK_ID TOK_ASSIGN exp TOK_SCOLON {
+        Simbolo *s = buscarSimbolo($1, escopo_atual);
+        if(s == NULL){
+            fprintf(stderr, "Erro Semântico na linha %d: Não é possível atribuir valor a '%s' pois ela não foi declarada.\n", yylineno, $1);
+            exit(1);
+        }
+        print_indent(nivel_atual);
+        printf("%s = %s;\n", $1, $3);
+    }
+    ;
+
+/* Tradução de estruturas condicionais */
+
+comando_if:
+    TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE {
+        print_ident(nivel_atual);
+        printf("if (%s) {\n", $3);
+        nivel_atual++;
+        escopo_atual++;
+    }
+    lista_comandos TOK_RBRACE {
+        removerEscopo(escopo_atual);
+        escopo_atual--;
+        nivel_atual--;
+        print_ident(nivel_atual);
+        printf("}\n");
+    }
+    
+    /* Tratamento do ELSE */
+
+    | comando_if TOK_ELSE TOK_LBRACE {
+        print_ident(nivel_atual);
+        printf("else {\n");
+        nivel_atual++;
+        escopo_atual++;
+    }
+    lista_comandos TOK_RBRACE {
+        removerEscopo(escopo_atual);
+        escopo_atual--;
+        nivel_atual--;
+        print_ident(nivel_atual);
+        printf("}\n");
+    }
+    ;
+
+/* Tradução do laço while */
+
+comando_while:
+    TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_LBRACE {
+        print_ident(nivel_atual);
+        printf("while (%s) {\n", $3);
+        nivel_atual++;
+        escopo_atual++;
+    }
+    lista_comandos TOK_RBRACE {
+        removerEscopo(escopo_atual);
+        escopo_atual--;
+        nivel_atual--;
+        print_indent(nivel_atual);
+        printf("}\n");
+    }
+    ;
+
 /* Regras de expressao: montam o texto final do codigo C */
 
 exp:
@@ -177,11 +251,25 @@ exp:
         sprintf(buf, "%g", $1);
         $$ = strdup(buf);
     }
+    | TOK_CHAR_LIT {
+        char buf[50];
+        sprintf(buf, "'%c'", $1);
+        $$ = strdup(buf);
+    }
     | TOK_ID {
         $$ = strdup($1);
     }
     | TOK_STRING_LIT {
         $$ = strdup($1);
+    }
+    | TOK_TRUE {
+        $$ = strdup("1");
+    }
+    | TOK_FALSE {
+        $$ = strdup("0);
+    }
+    | TOK_NULLPTR {
+        $$ = strdup("NULL");
     }
     | exp TOK_PLUS exp {
         char buf[512];
@@ -196,6 +284,61 @@ exp:
     | exp TOK_EQ exp {
         char buf[512];
         sprintf(buf, "%s == %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_NEQ exp {
+        char buf[512];
+        sprintf(buf, "%s != %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_MINUS exp {
+        char buf[512];
+        sprintf(buf, "%s - %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_DIV exp {
+        char buf[512];
+        sprintf(buf, "%s / %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_MOD exp {
+        char buf[512];
+        sprintf(buf, "%s %% %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_LT exp {
+        char buf[512];
+        sprintf(buf, "%s < %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_GT exp {
+        char buf[512];
+        sprintf(buf, "%s > %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_LE exp {
+        char buf[512];
+        sprintf(buf, "%s <= %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_GE exp {
+        char buf[512];
+        sprintf(buf, "%s >= %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_AND exp {
+        char buf[512];
+        sprintf(buf, "%s && %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | exp TOK_OR exp {
+        char buf[512];
+        sprintf(buf, "%s || %s", $1, $3);
+        $$ = strdup(buf);
+    }
+    | TOK_NOT exp {
+        char buf[512];
+        sprintf(buf, "!%s", $2);
         $$ = strdup(buf);
     }
     | TOK_LPAREN exp TOK_RPAREN {
