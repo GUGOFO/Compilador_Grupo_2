@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ast.hpp"
 #include "parser.tab.h"
 
 int coluna = 1;
@@ -15,9 +16,9 @@ int coluna = 1;
 
 "/*" { 
     int c;
-    while((c = input()) != 0 && c != EOF) {
+    while((c = yyinput()) != 0 && c != EOF) {
         if(c == '*') {
-            if((c = input()) == '/') break;
+            if((c = yyinput()) == '/') break;
             else unput(c);
         }
         else if(c == '\n') coluna = 1;

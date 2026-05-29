@@ -2,46 +2,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <memory>
+
+#include "ast.hpp"
 #include "tabela.h"
 
+int  yylex(void);
+void yyerror(const char *s);
 
-int yylex(void); 
-void yyerror(const char *s); 
+extern int   yylineno;
+extern char* yytext;
 
+ProgramaNode* raiz        = nullptr;
+int           nivel_atual = 0;
 
-extern int yylineno; 
-extern char* yytext; 
-
-void print_indent(int nivel) {
-    for(int i = 0; i < nivel; i++) printf("    ");
-}
-int nivel_atual = 0;
-int escopo_atual = 0;
+static BlocoNode* blocoAtual = nullptr;
+static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %}
 
-/* SEÇÃO DE DEFINIÇÕES */
-
 %union {
-    int ival;     
-    float fval;
-    char *sval;   
+    int      ival;
+    float    fval;
+    char*    sval;
+    ASTNode* node;
 }
-
-/* Tokens com Valor Semântico: */
 
 %token <sval> TOK_ID TOK_STRING_LIT
 %token <ival> TOK_INT_LIT TOK_CHAR_LIT
 %token <fval> TOK_FLOAT_LIT
 
-/* Tokens de Palavras Reservadas (Keywords) */
-
 %token TOK_VOID TOK_INT TOK_FLOAT TOK_DOUBLE TOK_BOOL TOK_LONG TOK_SHORT TOK_CHAR
 %token TOK_COUT TOK_CIN TOK_RETURN TOK_IF TOK_ELSE TOK_WHILE TOK_FOR TOK_DO
 %token TOK_BREAK TOK_CONTINUE TOK_SWITCH TOK_CASE TOK_DEFAULT TOK_SIZEOF
-%token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT TOK_TRUE TOK_FALSE TOK_NULLPTR
+%token TOK_AND TOK_OR TOK_NOT TOK_TRUE TOK_FALSE TOK_NULLPTR
 %token TOK_STD TOK_ENDL
-
-/* Tokens de Operadores e Pontuação */
 
 %token TOK_OUT TOK_IN TOK_SCOLON TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE
 %token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE
@@ -50,7 +44,6 @@ int escopo_atual = 0;
 %token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
 %token TOK_ADD_ASSIGN TOK_SUB_ASSIGN TOK_MULT_ASSIGN TOK_DIV_ASSIGN TOK_MOD_ASSIGN
 
-/* DEFINIÇÃO DE PRECEDÊNCIA */
 %left TOK_LOGIC_OR
 %left TOK_LOGIC_AND
 %left TOK_EQ TOK_NEQ
@@ -59,45 +52,68 @@ int escopo_atual = 0;
 %left TOK_MULT TOK_DIV TOK_MOD
 %right TOK_LOGIC_NOT
 
-/* Definição de tipos para os Não-Terminais da Gramática */
-%type <sval> exp tipo
-
-
-/* SEÇÃO DE REGRAS GRAMATICAIS*/
+%type <sval> tipo
+%type <node> exp declaracao declaracao_var comando_cout comando_cin
+%type <node> comando_return funcao bloco_funcao comando
+%type <node> comando_atribuicao comando_if comando_while comando_do_while comando_for
 
 %%
 
 programa:
     lista_declaracoes
+    {
+        raiz->gerarC();
+        fprintf(stderr, "\n");
+        imprimirTabela();
+    }
     ;
-
-/* Permite multiplas declaracoes no mesmo arquivo */
 
 lista_declaracoes:
     declaracao
+    {
+        raiz = new ProgramaNode();
+        if ($1) raiz->adicionar(adotar($1));
+    }
     | lista_declaracoes declaracao
+    {
+        if ($2) raiz->adicionar(adotar($2));
+    }
     ;
 
 declaracao:
-    funcao
-    | declaracao_var
-    | TOK_SCOLON 
+    funcao           { $$ = $1; }
+    | declaracao_var { $$ = $1; }
+    | TOK_SCOLON     { $$ = nullptr; }
     ;
 
-/* Traducao de funcoes: gera o cabecalho e controla o escopo */
-
 funcao:
-    tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
-        printf("%s %s() {\n", $1, $2);
+    tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE
+    {
+        inserirSimbolo($2, $1, 0);
         nivel_atual++;
-        escopo_atual++;
+        blocoAtual = new BlocoNode();
     }
-    lista_comandos TOK_RBRACE {
-        removerEscopo(escopo_atual);
-        escopo_atual--;
+    bloco_funcao TOK_RBRACE
+    {
+        removerEscopo(nivel_atual);
         nivel_atual--;
-        print_indent(nivel_atual);
-        printf("}\n");
+
+        auto* fn = new FuncaoNode($1, $2, adotar($7));
+        fn->linha = yylineno;
+        $$ = fn;
+    }
+    ;
+
+bloco_funcao:
+    %empty
+    {
+        $$ = blocoAtual;
+    }
+    | bloco_funcao comando
+    {
+        BlocoNode* b = static_cast<BlocoNode*>($1);
+        if ($2) b->adicionar(adotar($2));
+        $$ = b;
     }
     ;
 
@@ -112,348 +128,402 @@ tipo:
     | TOK_SHORT  { $$ = "short"; }
     ;
 
-/* Bloco interno de comandos */
-
-lista_comandos:
-
-    | lista_comandos comando
-    ;
-
 comando:
-    comando_cout
-    | comando_cin
-    | declaracao_var
-    | declaracao_var_for
-    | comando_return
-    | comando_atribuicao
-    | comando_if
-    | comando_while
-    | comando_do_while
-    | comando_for
-    | TOK_BREAK TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("break;\n");
+    comando_cout         { $$ = $1; }
+    | comando_cin        { $$ = $1; }
+    | declaracao_var     { $$ = $1; }
+    | comando_return     { $$ = $1; }
+    | comando_atribuicao { $$ = $1; }
+    | comando_if         { $$ = $1; }
+    | comando_while      { $$ = $1; }
+    | comando_do_while   { $$ = $1; }
+    | comando_for        { $$ = $1; }
+    | TOK_BREAK TOK_SCOLON
+    {
+        $$ = new BreakNode();
+        $$->linha = yylineno;
     }
-    | TOK_CONTINUE TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("continue;\n");
+    | TOK_CONTINUE TOK_SCOLON
+    {
+        $$ = new ContinueNode();
+        $$->linha = yylineno;
     }
-    | TOK_SCOLON
+    | TOK_SCOLON { $$ = nullptr; }
     ;
-
-/* Converte cout << para printf e cin >> para scanf*/
 
 comando_cout:
-    TOK_STD TOK_SCOPE TOK_COUT TOK_OUT exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        if ($5[0] == '"') {
-            printf("printf(%s);\n", $5);
-        } else {
-            printf("printf(\"%%g\\n\", %s);\n", $5);
-        }
+    TOK_STD TOK_SCOPE TOK_COUT TOK_OUT exp TOK_SCOLON
+    {
+        auto* n = new CmdCoutNode(adotar($5));
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
 
 comando_cin:
-    TOK_STD TOK_SCOPE TOK_CIN TOK_IN TOK_ID TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("scanf(\"%%g\", &%s);\n", $5);
+    TOK_STD TOK_SCOPE TOK_CIN TOK_IN TOK_ID TOK_SCOLON
+    {
+        Simbolo* s = buscarSimbolo($5, nivel_atual);
+        if (!s)
+            fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $5);
+
+        auto* n = new CmdCinNode($5);
+        n->linha = yylineno;
+        if (s) n->tipo_inferido = s->tipo;
+        $$ = n;
     }
     ;
-
-/* Traducao de declaracao de variaveis */
 
 declaracao_var:
-    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
-        inserirSimbolo($2, $1, escopo_atual);
-        print_indent(nivel_atual);
-        printf("%s %s = %s;\n", $1, $2, $4);
-    }
-    | tipo TOK_ID TOK_SCOLON {
-        inserirSimbolo($2, $1, escopo_atual);
-        print_indent(nivel_atual);
-        printf("%s %s;\n", $1, $2);
-    }
-    ;
+    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON
+    {
+        inserirSimbolo($2, $1, nivel_atual);
 
-/* Regra auxiliar para capturar o escopo das variáveis criadas dentro do próprio loop */
+        auto* n = new DeclVarNode($1, $2, adotar($4));
+        n->linha = yylineno;
+        $$ = n;
+    }
+    | tipo TOK_ID TOK_SCOLON
+    {
+        inserirSimbolo($2, $1, nivel_atual);
 
-declaracao_var_for:
-    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
-        inserirSimbolo($2, $1, escopo_atual + 1); // Insere no escopo que será aberto
-        print_indent(nivel_atual);
-        printf("for (%s %s = %s; ", $1, $2, $4);
+        auto* n = new DeclVarNode($1, $2);
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
-
-/* Traducao do comando de retorno */
-
-comando_return:
-    TOK_RETURN exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("return %s;\n", $2);
-    }
-    ;
-
-/* Permite a atribuição de valor a uma variável */
 
 comando_atribuicao:
-    TOK_ID TOK_ASSIGN exp TOK_SCOLON {
-        Simbolo *s = buscarSimbolo($1, escopo_atual);
-        if(s == NULL){
-            fprintf(stderr, "Erro Semântico na linha %d: Não é possível atribuir valor a '%s' pois ela não foi declarada.\n", yylineno, $1);
-            exit(1);
-        }
-        print_indent(nivel_atual);
-        printf("%s = %s;\n", $1, $3);
+    TOK_ID TOK_ASSIGN exp TOK_SCOLON
+    {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (!s)
+            fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+
+        auto* n = new AssignNode($1, "=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | TOK_ID TOK_ADD_ASSIGN exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("%s += %s;\n", $1, $3);
+    | TOK_ID TOK_ADD_ASSIGN exp TOK_SCOLON
+    {
+        auto* n = new AssignNode($1, "+=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | TOK_ID TOK_SUB_ASSIGN exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("%s -= %s;\n", $1, $3);
+    | TOK_ID TOK_SUB_ASSIGN exp TOK_SCOLON
+    {
+        auto* n = new AssignNode($1, "-=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | TOK_ID TOK_MULT_ASSIGN exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("%s *= %s;\n", $1, $3);
+    | TOK_ID TOK_MULT_ASSIGN exp TOK_SCOLON
+    {
+        auto* n = new AssignNode($1, "*=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | TOK_ID TOK_DIV_ASSIGN exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("%s /= %s;\n", $1, $3);
+    | TOK_ID TOK_DIV_ASSIGN exp TOK_SCOLON
+    {
+        auto* n = new AssignNode($1, "/=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | TOK_ID TOK_MOD_ASSIGN exp TOK_SCOLON {
-        print_indent(nivel_atual);
-        printf("%s %%= %s;\n", $1, $3);
+    | TOK_ID TOK_MOD_ASSIGN exp TOK_SCOLON
+    {
+        auto* n = new AssignNode($1, "%=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
-
-/* Tradução de estruturas condicionais */
 
 comando_if:
-    TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE {
-        print_indent(nivel_atual);
-        printf("if (%s) {\n", $3);
+    TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE
+    {
         nivel_atual++;
-        escopo_atual++;
+        blocoAtual = new BlocoNode();
     }
-    lista_comandos TOK_RBRACE {
-        removerEscopo(escopo_atual);
-        escopo_atual--;
+    bloco_funcao TOK_RBRACE
+    {
+        removerEscopo(nivel_atual);
         nivel_atual--;
-        print_indent(nivel_atual);
-        printf("}\n");
-    }
-    
-    /* Tratamento do ELSE */
 
-    | comando_if TOK_ELSE TOK_LBRACE {
-        print_indent(nivel_atual);
-        printf("else {\n");
-        nivel_atual++;
-        escopo_atual++;
+        auto* n = new IfNode(adotar($3), adotar($7));
+        n->linha = yylineno;
+        $$ = n;
     }
-    lista_comandos TOK_RBRACE {
-        removerEscopo(escopo_atual);
-        escopo_atual--;
+    | TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE
+    {
+        nivel_atual++;
+        blocoAtual = new BlocoNode();
+    }
+    bloco_funcao TOK_RBRACE TOK_ELSE TOK_LBRACE
+    {
+        removerEscopo(nivel_atual);
+        nivel_atual++;
+        blocoAtual = new BlocoNode();
+    }
+    bloco_funcao TOK_RBRACE
+    {
+        removerEscopo(nivel_atual);
         nivel_atual--;
-        print_indent(nivel_atual);
-        printf("}\n");
+
+        auto* n = new IfNode(adotar($3), adotar($7), adotar($12));
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
-
-/* Tradução do laço while */
 
 comando_while:
-    TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_LBRACE {
-        print_indent(nivel_atual);
-        printf("while (%s) {\n", $3);
+    TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_LBRACE
+    {
         nivel_atual++;
-        escopo_atual++;
+        blocoAtual = new BlocoNode();
     }
-    lista_comandos TOK_RBRACE {
-        removerEscopo(escopo_atual);
-        escopo_atual--;
+    bloco_funcao TOK_RBRACE
+    {
+        removerEscopo(nivel_atual);
         nivel_atual--;
-        print_indent(nivel_atual);
-        printf("}\n");
+
+        auto* n = new WhileNode(adotar($3), adotar($7));
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
-
-/* Tradução do laço do while */
 
 comando_do_while:
-    TOK_DO TOK_LBRACE {
-        print_indent(nivel_atual);
-        printf("do {\n");
+    TOK_DO TOK_LBRACE
+    {
         nivel_atual++;
-        escopo_atual++;
+        blocoAtual = new BlocoNode();
     }
-    lista_comandos TOK_RBRACE TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_SCOLON {
-        removerEscopo(escopo_atual);
-        escopo_atual--;
+    bloco_funcao TOK_RBRACE TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_SCOLON
+    {
+        removerEscopo(nivel_atual);
         nivel_atual--;
-        print_indent(nivel_atual);
-        printf("} while (%s);\n", $7);
+
+        auto* n = new DoWhileNode(adotar($4), adotar($8));
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
-
-/* Tradução do laço for */
 
 comando_for:
-    TOK_FOR TOK_LPAREN declaracao_var_for exp TOK_SCOLON exp TOK_RPAREN TOK_LBRACE {
-        printf(" %s; %s) {\n", $4, $6);
+    TOK_FOR TOK_LPAREN tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN TOK_LBRACE
+    {
+        inserirSimbolo($4, $3, nivel_atual + 1);
         nivel_atual++;
-        escopo_atual++;
+        blocoAtual = new BlocoNode();
     }
-    lista_comandos TOK_RBRACE {
-        removerEscopo(escopo_atual);
-        escopo_atual--;
+    bloco_funcao TOK_RBRACE
+    {
+        removerEscopo(nivel_atual);
         nivel_atual--;
-        print_indent(nivel_atual);
-        printf("}\n");
+
+        auto* init = new DeclVarNode($3, $4, adotar($6));
+        auto* n = new ForNode(adotar(init), adotar($8), adotar($10), adotar($14));
+        n->linha = yylineno;
+        $$ = n;
     }
     ;
 
-/* Regras de expressao: montam o texto final do codigo C */
+comando_return:
+    TOK_RETURN exp TOK_SCOLON
+    {
+        auto* n = new CmdReturnNode(adotar($2));
+        n->linha = yylineno;
+        $$ = n;
+    }
+    ;
 
 exp:
-    TOK_INT_LIT {
-        char buf[50];
-        sprintf(buf, "%d", $1);
-        $$ = strdup(buf);
+    TOK_INT_LIT
+    {
+        auto* n = new LiteralInteiroNode($1);
+        n->linha = yylineno;
+        n->tipo_inferido = "int";
+        $$ = n;
     }
-    | TOK_FLOAT_LIT {
-        char buf[50];
-        sprintf(buf, "%g", $1);
-        $$ = strdup(buf);
+    | TOK_FLOAT_LIT
+    {
+        auto* n = new LiteralFloatNode($1);
+        n->linha = yylineno;
+        n->tipo_inferido = "float";
+        $$ = n;
     }
-    | TOK_CHAR_LIT {
-        char buf[50];
-        sprintf(buf, "'%c'", $1);
-        $$ = strdup(buf);
+    | TOK_CHAR_LIT
+    {
+        auto* n = new LiteralInteiroNode($1);
+        n->linha = yylineno;
+        n->tipo_inferido = "char";
+        $$ = n;
     }
-    | TOK_ID {
-        $$ = strdup($1);
+    | TOK_TRUE
+    {
+        auto* n = new LiteralInteiroNode(1);
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | TOK_STRING_LIT {
-        $$ = strdup($1);
+    | TOK_FALSE
+    {
+        auto* n = new LiteralInteiroNode(0);
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | TOK_TRUE {
-        $$ = strdup("1");
+    | TOK_NULLPTR
+    {
+        auto* n = new IdentificadorNode("NULL");
+        n->linha = yylineno;
+        n->tipo_inferido = "void*";
+        $$ = n;
     }
-    | TOK_FALSE {
-        $$ = strdup("0");
+    | TOK_ID
+    {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (!s)
+            fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+
+        auto* n = new IdentificadorNode($1);
+        n->linha = yylineno;
+        if (s) n->tipo_inferido = s->tipo;
+        $$ = n;
     }
-    | TOK_NULLPTR {
-        $$ = strdup("NULL");
+    | TOK_STRING_LIT
+    {
+        auto* n = new LiteralStringNode($1);
+        n->linha = yylineno;
+        n->tipo_inferido = "string";
+        $$ = n;
     }
-    | exp TOK_PLUS exp {
-        char buf[512];
-        sprintf(buf, "%s + %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_PLUS exp
+    {
+        auto* n = new OperacaoBinariaNode("+", adotar($1), adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | exp TOK_MULT exp {
-        char buf[512];
-        sprintf(buf, "%s * %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_MINUS exp
+    {
+        auto* n = new OperacaoBinariaNode("-", adotar($1), adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | exp TOK_EQ exp {
-        char buf[512];
-        sprintf(buf, "%s == %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_MULT exp
+    {
+        auto* n = new OperacaoBinariaNode("*", adotar($1), adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | exp TOK_NEQ exp {
-        char buf[512];
-        sprintf(buf, "%s != %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_DIV exp
+    {
+        auto* n = new OperacaoBinariaNode("/", adotar($1), adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | exp TOK_MINUS exp {
-        char buf[512];
-        sprintf(buf, "%s - %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_MOD exp
+    {
+        auto* n = new OperacaoBinariaNode("%", adotar($1), adotar($3));
+        n->linha = yylineno;
+        $$ = n;
     }
-    | exp TOK_DIV exp {
-        char buf[512];
-        sprintf(buf, "%s / %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_EQ exp
+    {
+        auto* n = new OperacaoBinariaNode("==", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_MOD exp {
-        char buf[512];
-        sprintf(buf, "%s %% %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_NEQ exp
+    {
+        auto* n = new OperacaoBinariaNode("!=", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_LT exp {
-        char buf[512];
-        sprintf(buf, "%s < %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_LT exp
+    {
+        auto* n = new OperacaoBinariaNode("<", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_GT exp {
-        char buf[512];
-        sprintf(buf, "%s > %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_GT exp
+    {
+        auto* n = new OperacaoBinariaNode(">", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_LE exp {
-        char buf[512];
-        sprintf(buf, "%s <= %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_LE exp
+    {
+        auto* n = new OperacaoBinariaNode("<=", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_GE exp {
-        char buf[512];
-        sprintf(buf, "%s >= %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_GE exp
+    {
+        auto* n = new OperacaoBinariaNode(">=", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_LOGIC_AND exp {
-        char buf[512];
-        sprintf(buf, "%s && %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_LOGIC_AND exp
+    {
+        auto* n = new OperacaoBinariaNode("&&", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | exp TOK_LOGIC_OR exp {
-        char buf[512];
-        sprintf(buf, "%s || %s", $1, $3);
-        $$ = strdup(buf);
+    | exp TOK_LOGIC_OR exp
+    {
+        auto* n = new OperacaoBinariaNode("||", adotar($1), adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | TOK_LOGIC_NOT exp {
-        char buf[512];
-        sprintf(buf, "!%s", $2);
-        $$ = strdup(buf);
+    | TOK_LOGIC_NOT exp
+    {
+        auto* n = new OperacaoBinariaNode("!", adotar($2), nullptr);
+        n->linha = yylineno;
+        n->tipo_inferido = "bool";
+        $$ = n;
     }
-    | TOK_LPAREN exp TOK_RPAREN {
-        char buf[512];
-        sprintf(buf, "(%s)", $2);
-        $$ = strdup(buf);
+    | TOK_LPAREN exp TOK_RPAREN
+    {
+        auto* n = new ExpParenNode(adotar($2));
+        n->linha = yylineno;
+        n->tipo_inferido = $2->tipo_inferido;
+        $$ = n;
     }
-    | TOK_SIZEOF TOK_LPAREN tipo TOK_RPAREN {
-        char buf[256];
-        sprintf(buf, "sizeof(%s)", $3);
-        $$ = strdup(buf);
+    | TOK_SIZEOF TOK_LPAREN tipo TOK_RPAREN
+    {
+        auto* n = new IdentificadorNode($3);
+        n->linha = yylineno;
+        n->tipo_inferido = "int";
+        $$ = n;
     }
-    | TOK_SIZEOF TOK_LPAREN exp TOK_RPAREN {
-        char buf[256];
-        sprintf(buf, "sizeof(%s)", $3);
-        $$ = strdup(buf);
+    | TOK_SIZEOF TOK_LPAREN exp TOK_RPAREN
+    {
+        auto* n = new ExpParenNode(adotar($3));
+        n->linha = yylineno;
+        n->tipo_inferido = "int";
+        $$ = n;
     }
     ;
 
 %%
 
-/* FUNCOES DE SUPORTE */
-
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro de Sintaxe na linha %d: %s (perto de '%s')\n", yylineno, s, yytext);
+    fprintf(stderr, "Erro sintatico (linha %d): %s (perto de '%s')\n", yylineno, s, yytext);
 }
 
-/* Inicia o transpilador e imprime os headers do C */
 int main() {
-
-    /* Adiciona os headers necessários no topo do ficheiro C gerado */
-    printf("#include <stdio.h>\n");
-    printf("#include <stdbool.h>\n\n");
-    
-    /* Inicia o processo de parsing */
-    if (yyparse() == 0) {
-        fprintf(stderr, "Transpilação concluída com sucesso!\n");
+    if (yyparse() != 0) {
+        fprintf(stderr, "Falha no parsing.\n");
+        return 1;
     }
+    fprintf(stderr, "Transpilacao concluida com sucesso!\n");
+    delete raiz;
     return 0;
 }
