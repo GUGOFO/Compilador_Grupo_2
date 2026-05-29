@@ -12,6 +12,6 @@ Arquivo reservado para o codigo do projeto
 
 3. rode "flex scanner.l"
 
-4. rode "gcc parser.tab.c lex.yy.c -o transpilador -lfl"
+4. rode "g++ parser.tab.c lex.yy.c tabela.c -o transpilador"
 
 5. rode "./transpilador < exemplo_entrada.c++ > saida.c"

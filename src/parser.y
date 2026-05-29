@@ -16,14 +16,13 @@ extern char* yytext;
 ProgramaNode* raiz        = nullptr;
 int           nivel_atual = 0;
 
-static BlocoNode* blocoAtual = nullptr;
 static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %}
 
 %union {
     int      ival;
     float    fval;
-    char*    sval;
+    char* sval;
     ASTNode* node;
 }
 
@@ -54,8 +53,9 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 
 %type <sval> tipo
 %type <node> exp declaracao declaracao_var comando_cout comando_cin
-%type <node> comando_return funcao bloco_funcao comando
-%type <node> comando_atribuicao comando_if comando_while comando_do_while comando_for
+%type <node> comando_return funcao bloco_escopo lista_comandos comando
+%type <node> comando_atribuicao comando_if 
+%type <node> comando_while comando_do_while comando_for
 
 %%
 
@@ -87,29 +87,37 @@ declaracao:
     ;
 
 funcao:
-    tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE
+    tipo TOK_ID TOK_LPAREN TOK_RPAREN
     {
         inserirSimbolo($2, $1, 0);
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
     }
-    bloco_funcao TOK_RBRACE
+    bloco_escopo
     {
-        removerEscopo(nivel_atual);
-        nivel_atual--;
-
-        auto* fn = new FuncaoNode($1, $2, adotar($7));
+        auto* fn = new FuncaoNode($1, $2, adotar($6));
         fn->linha = yylineno;
         $$ = fn;
     }
     ;
 
-bloco_funcao:
+bloco_escopo:
+    TOK_LBRACE
+    {
+        nivel_atual++;
+    }
+    lista_comandos TOK_RBRACE
+    {
+        removerEscopo(nivel_atual);
+        nivel_atual--;
+        $$ = $3;
+    }
+    ;
+
+lista_comandos:
     %empty
     {
-        $$ = blocoAtual;
+        $$ = new BlocoNode();
     }
-    | bloco_funcao comando
+    | lista_comandos comando
     {
         BlocoNode* b = static_cast<BlocoNode*>($1);
         if ($2) b->adicionar(adotar($2));
@@ -118,14 +126,14 @@ bloco_funcao:
     ;
 
 tipo:
-    TOK_INT      { $$ = "int"; }
-    | TOK_FLOAT  { $$ = "float"; }
-    | TOK_DOUBLE { $$ = "double"; }
-    | TOK_BOOL   { $$ = "bool"; }
-    | TOK_VOID   { $$ = "void"; }
-    | TOK_CHAR   { $$ = "char"; }
-    | TOK_LONG   { $$ = "long"; }
-    | TOK_SHORT  { $$ = "short"; }
+    TOK_INT      { $$ = strdup("int"); }
+    | TOK_FLOAT  { $$ = strdup("float"); }
+    | TOK_DOUBLE { $$ = strdup("double"); }
+    | TOK_BOOL   { $$ = strdup("bool"); }
+    | TOK_VOID   { $$ = strdup("void"); }
+    | TOK_CHAR   { $$ = strdup("char"); }
+    | TOK_LONG   { $$ = strdup("long"); }
+    | TOK_SHORT  { $$ = strdup("short"); }
     ;
 
 comando:
@@ -166,7 +174,6 @@ comando_cin:
         Simbolo* s = buscarSimbolo($5, nivel_atual);
         if (!s)
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $5);
-
         auto* n = new CmdCinNode($5);
         n->linha = yylineno;
         if (s) n->tipo_inferido = s->tipo;
@@ -178,7 +185,6 @@ declaracao_var:
     tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON
     {
         inserirSimbolo($2, $1, nivel_atual);
-
         auto* n = new DeclVarNode($1, $2, adotar($4));
         n->linha = yylineno;
         $$ = n;
@@ -186,7 +192,6 @@ declaracao_var:
     | tipo TOK_ID TOK_SCOLON
     {
         inserirSimbolo($2, $1, nivel_atual);
-
         auto* n = new DeclVarNode($1, $2);
         n->linha = yylineno;
         $$ = n;
@@ -199,7 +204,6 @@ comando_atribuicao:
         Simbolo* s = buscarSimbolo($1, nivel_atual);
         if (!s)
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
-
         auto* n = new AssignNode($1, "=", adotar($3));
         n->linha = yylineno;
         $$ = n;
@@ -237,90 +241,47 @@ comando_atribuicao:
     ;
 
 comando_if:
-    TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE
+    TOK_IF TOK_LPAREN exp TOK_RPAREN bloco_escopo
     {
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
-    }
-    bloco_funcao TOK_RBRACE
-    {
-        removerEscopo(nivel_atual);
-        nivel_atual--;
-
-        auto* n = new IfNode(adotar($3), adotar($7));
+        auto* n = new IfNode(adotar($3), adotar($5));
         n->linha = yylineno;
         $$ = n;
     }
-    | TOK_IF TOK_LPAREN exp TOK_RPAREN TOK_LBRACE
+    | TOK_IF TOK_LPAREN exp TOK_RPAREN bloco_escopo TOK_ELSE bloco_escopo
     {
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
-    }
-    bloco_funcao TOK_RBRACE TOK_ELSE TOK_LBRACE
-    {
-        removerEscopo(nivel_atual);
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
-    }
-    bloco_funcao TOK_RBRACE
-    {
-        removerEscopo(nivel_atual);
-        nivel_atual--;
-
-        auto* n = new IfNode(adotar($3), adotar($7), adotar($12));
+        auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
         n->linha = yylineno;
         $$ = n;
     }
     ;
 
 comando_while:
-    TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_LBRACE
+    TOK_WHILE TOK_LPAREN exp TOK_RPAREN bloco_escopo
     {
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
-    }
-    bloco_funcao TOK_RBRACE
-    {
-        removerEscopo(nivel_atual);
-        nivel_atual--;
-
-        auto* n = new WhileNode(adotar($3), adotar($7));
+        auto* n = new WhileNode(adotar($3), adotar($5));
         n->linha = yylineno;
         $$ = n;
     }
     ;
 
 comando_do_while:
-    TOK_DO TOK_LBRACE
+    TOK_DO bloco_escopo TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_SCOLON
     {
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
-    }
-    bloco_funcao TOK_RBRACE TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_SCOLON
-    {
-        removerEscopo(nivel_atual);
-        nivel_atual--;
-
-        auto* n = new DoWhileNode(adotar($4), adotar($8));
+        auto* n = new DoWhileNode(adotar($2), adotar($5));
         n->linha = yylineno;
         $$ = n;
     }
     ;
 
 comando_for:
-    TOK_FOR TOK_LPAREN tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN TOK_LBRACE
+    TOK_FOR TOK_LPAREN tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN
     {
         inserirSimbolo($4, $3, nivel_atual + 1);
-        nivel_atual++;
-        blocoAtual = new BlocoNode();
     }
-    bloco_funcao TOK_RBRACE
+    bloco_escopo
     {
-        removerEscopo(nivel_atual);
-        nivel_atual--;
-
         auto* init = new DeclVarNode($3, $4, adotar($6));
-        auto* n = new ForNode(adotar(init), adotar($8), adotar($10), adotar($14));
+        auto* n = new ForNode(adotar(init), adotar($8), adotar($10), adotar($13));
         n->linha = yylineno;
         $$ = n;
     }
@@ -383,7 +344,6 @@ exp:
         Simbolo* s = buscarSimbolo($1, nivel_atual);
         if (!s)
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
-
         auto* n = new IdentificadorNode($1);
         n->linha = yylineno;
         if (s) n->tipo_inferido = s->tipo;
@@ -511,7 +471,6 @@ exp:
         $$ = n;
     }
     ;
-
 %%
 
 void yyerror(const char *s) {
