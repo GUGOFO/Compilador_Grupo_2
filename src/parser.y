@@ -1,5 +1,4 @@
 %{
-/* Bibliotecas padrão e header da tabela de símbolos */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,91 +10,78 @@ void yyerror(const char *s);
 extern int yylineno;
 extern char* yytext;
 
-/* Imprime a indentação correta de acordo com o nível do bloco atual */
 void print_indent(int nivel) {
     for(int i = 0; i < nivel; i++) printf("    ");
 }
 
-int nivel_atual = 0;           /* nível de indentação do código C gerado */
-char escopo_atual[64] = "global"; /* escopo atual: "global" ou nome da função */
+int nivel_atual = 0;
+char escopo_atual[64] = "global";
 %}
 
 /* SEÇÃO DE DEFINIÇÕES */
 
-/* Tipos de valores que os tokens podem carregar */
 %union {
     int ival;
     char *sval;
 }
 
-/* Tokens que carregam valor */
 %token <sval> TOK_ID TOK_STRING_LIT
 %token <ival> TOK_INT_LIT
 
-/* Tokens de palavras reservadas e símbolos */
 %token TOK_VOID TOK_INT TOK_FLOAT TOK_BOOL
 %token TOK_COUT TOK_OUT TOK_SCOLON TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE
 %token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV
 %token TOK_RETURN
 
-/* Precedência dos operadores — de menor pra maior */
 %left TOK_PLUS TOK_MINUS
 %left TOK_MULT TOK_DIV
 
-/* exp retorna uma string com o código C gerado */
 %type <sval> exp
 
 %%
 
-/* SEÇÃO DE REGRAS GRAMATICAIS */
+/* SEÇÃO DE REGRAS */
 
-/* Ponto de entrada: um programa é uma lista de declarações */
 programa:
     lista_declaracoes
     ;
 
-/* Uma ou mais declarações em sequência */
 lista_declaracoes:
     declaracao
     | lista_declaracoes declaracao
     ;
 
-/* Uma declaração pode ser uma função, uma variável ou um ; isolado */
 declaracao:
     funcao
     | declaracao_var
     | TOK_SCOLON
     ;
 
-/* Declaração de função: registra na tabela, muda o escopo e gera o cabeçalho em C */
 funcao:
     TOK_INT TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
         inserirSimbolo($2, "int", "global");
-        strcpy(escopo_atual, $2);   /* entra no escopo da função */
+        strcpy(escopo_atual, $2);
         printf("int %s() {\n", $2);
         nivel_atual++;
     }
     lista_comandos TOK_RBRACE {
         nivel_atual--;
-        strcpy(escopo_atual, "global"); /* volta ao escopo global ao sair */
+        strcpy(escopo_atual, "global");
         print_indent(nivel_atual);
         printf("}\n");
     }
     ;
 
-/* Zero ou mais comandos dentro de um bloco */
 lista_comandos:
     | lista_comandos comando
     ;
 
-/* Um comando pode ser: cout, declaração de variável ou return */
 comando:
     comando_cout
     | declaracao_var
     | comando_return
     ;
 
-/* Traduz std::cout << exp para printf */
 comando_cout:
     TOK_COUT TOK_OUT exp TOK_SCOLON {
         print_indent(nivel_atual);
@@ -103,7 +89,6 @@ comando_cout:
     }
     ;
 
-/* Declaração de variável com ou sem inicialização — verifica redeclaração e insere na tabela */
 declaracao_var:
     TOK_INT TOK_ID TOK_ASSIGN exp TOK_SCOLON {
         if (buscarSimbolo($2, escopo_atual) != NULL)
@@ -123,7 +108,6 @@ declaracao_var:
     }
     ;
 
-/* Traduz o return direto para C */
 comando_return:
     TOK_RETURN exp TOK_SCOLON {
         print_indent(nivel_atual);
@@ -131,7 +115,6 @@ comando_return:
     }
     ;
 
-/* Expressões — cada alternativa monta e retorna o texto C equivalente */
 exp:
     TOK_INT_LIT {
         char buf[50];
@@ -139,7 +122,6 @@ exp:
         $$ = strdup(buf);
     }
     | TOK_ID {
-        /* verifica se o identificador foi declarado no escopo local ou global */
         if (buscarSimbolo($1, escopo_atual) == NULL && buscarSimbolo($1, "global") == NULL)
             fprintf(stderr, "Erro Semântico na linha %d: '%s' não foi declarada\n", yylineno, $1);
         $$ = strdup($1);
@@ -166,12 +148,10 @@ exp:
 
 %%
 
-/* Exibe erros de sintaxe com a linha e o token que causou o problema */
 void yyerror(const char *s) {
     fprintf(stderr, "Erro na linha %d: %s (perto de '%s')\n", yylineno, s, yytext);
 }
 
-/* Ponto de entrada: imprime os headers do C, roda o parser e exibe a tabela de símbolos */
 int main() {
     printf("#include <stdio.h>\n#include <stdbool.h>\n\n");
     int resultado = yyparse();
