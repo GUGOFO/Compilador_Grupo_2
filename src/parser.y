@@ -38,7 +38,7 @@ int escopo_atual = 0;
 %token TOK_VOID TOK_INT TOK_FLOAT TOK_DOUBLE TOK_BOOL TOK_LONG TOK_SHORT TOK_CHAR
 %token TOK_COUT TOK_CIN TOK_RETURN TOK_IF TOK_ELSE TOK_WHILE TOK_FOR TOK_DO
 %token TOK_BREAK TOK_CONTINUE TOK_SWITCH TOK_CASE TOK_DEFAULT TOK_SIZEOF
-%token TOK_AND TOK_OR TOK_NOT TOK_TRUE TOK_FALSE TOK_NULLPTR
+%token TOK_TRUE TOK_FALSE TOK_NULLPTR
 %token TOK_STD TOK_ENDL
 
 /* Tokens de Operadores e Pontuação */
@@ -123,10 +123,21 @@ comando:
     comando_cout
     | comando_cin
     | declaracao_var
+    | declaracao_var_for
     | comando_return
     | comando_atribuicao
     | comando_if
     | comando_while
+    | comando_do_while
+    | comando_for
+    | TOK_BREAK TOK_SCOLON {
+        print_indent(nivel_atual);
+        pritnf("break;\n");
+    }
+    | TOK_CONTINUE TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("continue;\n");
+    }
     | TOK_SCOLON
     ;
 
@@ -165,6 +176,16 @@ declaracao_var:
     }
     ;
 
+/* Regra auxiliar para capturar o escopo das variáveis criadas dentro do próprio loop */
+
+declaracao_var_for:
+    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
+        inserirSimbolo($2, $1, escopo_atual + 1); // Insere no escopo que será aberto
+        print_indent(nivel_atual);
+        printf("for (%s %s = %s;", $1, $2, $4));
+    }
+    ;
+
 /* Traducao do comando de retorno */
 
 comando_return:
@@ -185,6 +206,26 @@ comando_atribuicao:
         }
         print_indent(nivel_atual);
         printf("%s = %s;\n", $1, $3);
+    }
+    | TOK_ID TOK_ADD_ASSIGN exp TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("%s += %s;\n, $1, $3);
+    }
+    | TOK_ID TOK_SUB_ASSIGN exp TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("%s -= %s;\n, $1, $3);
+    }
+    | TOK_ID TOK_MULT_ASSIGN exp TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("%s *= %s;\n, $1, $3);
+    }
+    | TOK_ID TOK_DIV_ASSIGN exp TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("%s /= %s;\n, $1, $3);
+    }
+    | TOK_ID TOK_MOD_ASSIGN exp TOK_SCOLON {
+        print_indent(nivel_atual);
+        printf("%s %%= %s;\n, $1, $3);
     }
     ;
 
@@ -228,6 +269,41 @@ comando_while:
     TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_LBRACE {
         print_ident(nivel_atual);
         printf("while (%s) {\n", $3);
+        nivel_atual++;
+        escopo_atual++;
+    }
+    lista_comandos TOK_RBRACE {
+        removerEscopo(escopo_atual);
+        escopo_atual--;
+        nivel_atual--;
+        print_indent(nivel_atual);
+        printf("}\n");
+    }
+    ;
+
+/* Tradução do laço do while */
+
+comando_do_while:
+    TOK_DO TOK_LBRACE {
+        print_ident(nivel_atual);
+        printf("do {\n");
+        nivel_atual++;
+        escopo_atual++;
+    }
+    lista_comandos TOK_RBRACE TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_SCOLON {
+        removerEscopo(escopo_atual);
+        escopo_atual--;
+        nivel_atual--;
+        print_indent(nivel_atual);
+        printf("} while (%s);\n", $7);
+    }
+    ;
+
+/* Tradução do laço for */
+
+comando_for:
+    TOK_FOR TOK_LPAREN declaracao_var_for exp TOK_SCOLON exp TOK_RPAREN TOKLBRACE {
+        printf(" %s; %s) {\n", $4, $6);
         nivel_atual++;
         escopo_atual++;
     }
@@ -346,6 +422,16 @@ exp:
     | TOK_LPAREN exp TOK_RPAREN {
         char buf[512];
         sprintf(buf, "(%s)", $2);
+        $$ = strdup(buf);
+    }
+    | TOK_SIZEOF TOK_LPAREN tipo TOK_RPAREN {
+        char[256];
+        sprintf(buf, "sizeof(%s)", $3);
+        $$ = strdup(buf);
+    }
+    | TOK_SIZEOF TOK_LPAREN exp TOK_RPAREN {
+        char[256];
+        sprintf(buf, "sizeof(%s)", $3);
         $$ = strdup(buf);
     }
     ;
