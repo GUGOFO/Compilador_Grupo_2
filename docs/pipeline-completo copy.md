@@ -1,6 +1,6 @@
 ---
 title: Pipeline Completo do Compilador
-nav_order: 5
+nav_order: 6
 ---
 
 # Pipeline Completo do Compilador
