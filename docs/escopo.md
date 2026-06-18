@@ -1,8 +1,13 @@
-## Tabela de Capacidades e Limitações do Transpilador (Versão Final)
+---
+title: Escopo
+nav_order: 6
+---
 
-A tabela abaixo resume o escopo operacional completo do compilador, dividindo as construções da linguagem C++ entre o que é nativamente suportado pelo pipeline (incluindo as últimas correções) e o que gerará falhas críticas, erros de sintaxe ou estouros de memória.
+# Tabela de Escopo
 
-| Categoria | Suportado (O que PODE fazer) | Não Suportado / Quebra (O que NÃO PODE fazer) |
+A tabela abaixo resume o escopo operacional completo do compilador, dividindo as construções da linguagem C++ entre o que é nativamente suportado pelo pipeline e o que gerará falhas críticas, erros de sintaxe ou estouros de memória.
+
+| Categoria | Suportado | Não Suportado / Quebra |
 | :--- | :--- | :--- |
 | **Tipos de Dados** | `int`, `float`, `double`, `bool`, `char`, `long`, `short`, `void`. | Criar classes (`class`), estruturas (`struct`) ou usar tipos da biblioteca padrão (ex: `std::string`). |
 | **Declaração de Variáveis** | Uma variável por linha, com ou sem inicialização (ex: `int a = 0;` ou `int b;`). | **Declarações múltiplas** na mesma linha separadas por vírgula (ex: `int a, b;` gera **Erro Sintático**). |
