@@ -106,8 +106,8 @@ public:
         printf("[OperacaoBinaria] %s", operador.c_str());
         printInfo();
         printf("\n");
-        esquerda->print(nivel + 1);
-        direita->print(nivel + 1);
+        if (esquerda) esquerda->print(nivel + 1);
+        if (direita) direita->print(nivel + 1);
     }
     void gerarC(int nivel = 0) const override {
         if (!direita) {
@@ -199,9 +199,10 @@ public:
         if (auto* s = dynamic_cast<LiteralStringNode*>(expr.get())) {
             printf("printf(%s);\n", s->valor.c_str());
         } else {
-            printf("printf(\"%%g\\n\", ");
+            // A MÁGICA AQUI: Forçamos o cast genérico para (double)
+            printf("printf(\"%%g\\n\", (double)(");
             expr->gerarC();
-            printf(");\n");
+            printf("));\n");
         }
     }
 };
@@ -416,6 +417,10 @@ public:
         if (auto* d = dynamic_cast<DeclVarNode*>(init.get())) {
             printf("%s %s = ", d->tipo.c_str(), d->nome.c_str());
             if (d->inicializador) d->inicializador->gerarC();
+        } 
+        else if (auto* a = dynamic_cast<AssignNode*>(init.get())) {
+            printf("%s %s ", a->nome.c_str(), a->op.c_str());
+            a->valor->gerarC();
         }
         printf("; "); condicao->gerarC();
         printf("; "); incremento->gerarC();

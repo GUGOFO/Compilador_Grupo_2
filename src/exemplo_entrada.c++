@@ -1,24 +1,89 @@
+/*
+  =========================================
+  O TESTE DO TRANSPILADOR C++ -> C
+  =========================================
+*/
+
 int main() {
-    int base = 10;
-    float altura = 5.5;
-    float area = 0.0;
+    int idade = 21;
+    float nota = 9.5;
+    double pi = 3.14159;
+    bool aprovado = true;
+    bool reprovado = false;
+    char turma = 'A';
+    int saldo = -150;
+    
+    std::cout << "--- INICIANDO TESTES DO COMPILADOR ---";
+    std::cout << "\n";
+    std::cout << "Saldo na conta (negativo):";
+    
+    std::cout << saldo * 1.0; 
+    std::cout << "\n";
 
-    std::cout << "Iniciando o calculo da area...";
-
-    area = (base * altura) / 2;
-
-    if (area > 20.0) {
-        std::cout << "A area e maior que 20";
+    int calculo = 0;
+    calculo += 10;
+    calculo -= 2;
+    calculo *= 5; 
+    
+    if (aprovado and not reprovado) {
+        std::cout << "Logica textual (and, not) funcionou!";
+        std::cout << "\n";
     } else {
-        std::cout << "A area e menor ou igual a 20";
+        std::cout << "Falhou...";
+        std::cout << "\n";
+    }
+
+    if (calculo == 40 && saldo < 0) {
+        std::cout << "Logica simbolica (&&, ==, <) funcionou!";
+        std::cout << "\n";
     }
 
     int contador = 0;
-    
+    std::cout << "Testando While: ";
+    std::cout << "\n";
     while (contador < 3) {
-        std::cout << contador;
+        std::cout << contador * 1.0;
+        std::cout << "\n";
         contador += 1;
     }
+
+    std::cout << "Testando Do-While com Break: ";
+    std::cout << "\n";
+    do {
+        std::cout << "Entrou e executou o break!";
+        std::cout << "\n";
+        break;
+    } while (false);
+
+    std::cout << "Testando For (reaproveitando variavel): ";
+    std::cout << "\n";
+    int i = 0;
+    
+    for (i = 0; i < 2; i + 1) {
+        if (i == 1) {
+            std::cout << "Executou o continue!";
+            std::cout << "\n";
+            i += 1;
+            continue;
+        }
+        std::cout << i * 1.0;
+        std::cout << "\n";
+        i += 1;
+    }
+
+    if (true) {
+        int idade = 99; 
+        std::cout << "Shadowing (idade interna devera ser 99): ";
+        std::cout << idade * 1.0;
+        std::cout << "\n";
+    }
+
+    std::cout << "Idade global intacta (devera ser 21): ";
+    std::cout << idade * 1.0;
+    std::cout << "\n";
+    
+    std::cout << "SUCESSO ABSOLUTO!";
+    std::cout << "\n";
 
     return 0;
 }

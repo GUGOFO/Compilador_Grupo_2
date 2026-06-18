@@ -62,7 +62,7 @@ void removerEscopo(int escopo_alvo){
 }
 
 void imprimirTabela(){
-    printf("\nTabela de Simbolos:\n");
+    fprintf(stderr, "\nTabela de Simbolos:\n");
     for(Simbolo *s = tabela; s; s = s -> prox)
-        printf("Nome: %s, Tipo: %s, Escopo: %d\n", s -> nome, s -> tipo, s -> escopo);
+        fprintf(stderr, "Nome: %s, Tipo: %s, Escopo: %d\n", s -> nome, s -> tipo, s -> escopo);
 }

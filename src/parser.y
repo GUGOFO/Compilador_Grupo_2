@@ -49,7 +49,7 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %left TOK_LT TOK_GT TOK_LE TOK_GE
 %left TOK_PLUS TOK_MINUS
 %left TOK_MULT TOK_DIV TOK_MOD
-%right TOK_LOGIC_NOT
+%right TOK_LOGIC_NOT UMINUS
 
 %type <sval> tipo
 %type <node> exp declaracao declaracao_var comando_cout comando_cin
@@ -285,6 +285,19 @@ comando_for:
         n->linha = yylineno;
         $$ = n;
     }
+    |
+    TOK_FOR TOK_LPAREN TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN
+    bloco_escopo
+    {
+        Simbolo* s = buscarSimbolo($3, nivel_atual);
+        if (!s)
+            fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $3);
+        
+        auto* init = new AssignNode($3, "=", adotar($5));
+        auto* n = new ForNode(adotar(init), adotar($7), adotar($9), adotar($11));
+        n->linha = yylineno;
+        $$ = n;
+    }
     ;
 
 comando_return:
@@ -366,6 +379,14 @@ exp:
     {
         auto* n = new OperacaoBinariaNode("-", adotar($1), adotar($3));
         n->linha = yylineno;
+        $$ = n;
+    }
+    | TOK_MINUS exp %prec UMINUS
+    {
+        // Reutilizamos o nó binário, mas passando nullptr para o lado direito!
+        auto* n = new OperacaoBinariaNode("-", adotar($2), nullptr);
+        n->linha = yylineno;
+        n->tipo_inferido = $2->tipo_inferido;
         $$ = n;
     }
     | exp TOK_MULT exp
