@@ -2,6 +2,7 @@
 transpilador
 lexico
 lexico_teste
+programa_executavel
 *.exe
 *.out
 *.app
