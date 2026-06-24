@@ -83,6 +83,24 @@ int main() {
         std::cout << "\n";
     }
 
+    std::cout << "Testando Comando Switch-Case: ";
+    std::cout << "\n";
+    int opcao = 2;
+    switch (opcao) {
+        case 1:
+            std::cout << 111 * 1.0;
+            std::cout << "\n";
+            break;
+        case 2:
+            std::cout << 222 * 1.0;
+            std::cout << "\n";
+            break;
+        default:
+            std::cout << 999 * 1.0;
+            std::cout << "\n";
+            break;
+    }
+
     meuVetor[2] = 88;
     int valorVetor = meuVetor[2];
     std::cout << valorVetor * 1.0;

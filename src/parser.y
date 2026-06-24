@@ -38,7 +38,7 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %token TOK_STD TOK_ENDL
 
 %token TOK_OUT TOK_IN TOK_SCOLON TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE
-%token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE
+%token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE TOK_COLON
 %token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD
 %token TOK_EQ TOK_NEQ TOK_LT TOK_GT TOK_LE TOK_GE
 %token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
@@ -56,7 +56,7 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %type <node> exp declaracao declaracao_var comando_cout comando_cin
 %type <node> comando_return funcao bloco_escopo lista_comandos comando
 %type <node> comando_atribuicao comando_if 
-%type <node> comando_while comando_do_while comando_for parametro
+%type <node> comando_while comando_do_while comando_for parametro comando_switch lista_cases case_item default_item
 %type <list> lista_parametros lista_argumentos
 
 %%
@@ -66,13 +66,13 @@ programa:
     {
         // 1. Imprime a Árvore Sintática Estruturada
         fprintf(stderr, "\n======================================================================\n");
-        fprintf(stderr, "                  🌳 ÁRVORE SINTÁTICA ABSTRATA (AST)\n");
+        fprintf(stderr, "                  ÁRVORE SINTÁTICA ABSTRATA (AST)\n");
         fprintf(stderr, "======================================================================\n");
         if (raiz) raiz->print();
 
         // 2. Imprime o Código Intermediário
         fprintf(stderr, "\n======================================================================\n");
-        fprintf(stderr, "                  ⚙️ GERAÇÃO DE CÓDIGO INTERMEDIÁRIO (TAC)\n");
+        fprintf(stderr, "                  GERAÇÃO DE CÓDIGO INTERMEDIÁRIO (TAC)\n");
         fprintf(stderr, "======================================================================\n");
         if (raiz) raiz->gerarTAC();
         fprintf(stderr, "======================================================================\n");
@@ -107,11 +107,10 @@ funcao:
     }
     bloco_escopo
     {
-        // Converte o std::vector<ASTNode*>* para um std::vector<NodoPtr>
         std::vector<NodoPtr> params;
         if ($4) {
             for (auto* n : *$4) params.push_back(adotar(n));
-            delete $4; // Limpa o vetor temporário do Bison
+            delete $4; 
         }
         auto* fn = new FuncaoNode($1, $2, std::move(params), adotar($7));
         fn->linha = yylineno;
@@ -139,14 +138,13 @@ lista_parametros:
 parametro:
     tipo TOK_ID
     {
-        // Insere o parâmetro no escopo da função (nivel_atual + 1)
         inserirSimbolo($2, $1, nivel_atual + 1);
         auto* n = new DeclVarNode($1, $2);
         n->linha = yylineno;
         $$ = n;
     }
     ;
-    
+
 bloco_escopo:
     TOK_LBRACE
     {
@@ -198,6 +196,7 @@ comando:
     | comando_while      { $$ = $1; }
     | comando_do_while   { $$ = $1; }
     | comando_for        { $$ = $1; }
+    | comando_switch     { $$ = $1; }
     | TOK_BREAK TOK_SCOLON
     {
         $$ = new BreakNode();
@@ -248,7 +247,7 @@ declaracao_var:
         n->linha = yylineno;
         $$ = n;
     }
-    | tipo TOK_ID TOK_LBRACKET TOK_INT_LIT TOK_RBRACKET TOK_SCOLON  /* <--- NOVO: int v[10]; */
+    | tipo TOK_ID TOK_LBRACKET TOK_INT_LIT TOK_RBRACKET TOK_SCOLON
     {
         std::string tipo_vetor = std::string($1) + "[]";
         inserirSimbolo($2, strdup(tipo_vetor.c_str()), nivel_atual);
@@ -298,7 +297,7 @@ comando_atribuicao:
         n->linha = yylineno;
         $$ = n;
     }
-    | TOK_ID TOK_LBRACKET exp TOK_RBRACKET TOK_ASSIGN exp TOK_SCOLON  /* <--- NOVO: v[i] = x; */
+    | TOK_ID TOK_LBRACKET exp TOK_RBRACKET TOK_ASSIGN exp TOK_SCOLON
     {
         Simbolo* s = buscarSimbolo($1, nivel_atual);
         if (!s)
@@ -354,18 +353,61 @@ comando_for:
         n->linha = yylineno;
         $$ = n;
     }
-    |
-    TOK_FOR TOK_LPAREN TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN
+    | TOK_FOR TOK_LPAREN TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN
     bloco_escopo
     {
         Simbolo* s = buscarSimbolo($3, nivel_atual);
         if (!s)
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $3);
-        
         auto* init = new AssignNode($3, "=", adotar($5));
         auto* n = new ForNode(adotar(init), adotar($7), adotar($9), adotar($11));
         n->linha = yylineno;
         $$ = n;
+    }
+    ;
+
+comando_switch:
+    TOK_SWITCH TOK_LPAREN exp TOK_RPAREN TOK_LBRACE lista_cases TOK_RBRACE
+    {
+       auto* sw = static_cast<SwitchNode*>($6);
+       sw->expressao = adotar($3);
+       sw->linha = yylineno;
+       $$ = sw;
+    }
+    ;
+
+lista_cases:
+    %empty
+    {
+        $$ = new SwitchNode(nullptr);
+    }
+    | lista_cases case_item
+    {
+        auto* sw = static_cast<SwitchNode*>($1);
+        if ($2) sw->adicionarCase(adotar($2));
+        $$ = sw;
+    }
+    | lista_cases default_item
+    {
+        auto* sw = static_cast<SwitchNode*>($1);
+        if ($2) sw->adicionarCase(adotar($2));
+        $$ = sw;
+    }
+    ;
+
+case_item:
+    TOK_CASE exp TOK_COLON lista_comandos
+    {
+       $$ = new CaseNode(adotar($2), adotar($4));
+       $$->linha = yylineno;
+    }
+    ;
+
+default_item:
+    TOK_DEFAULT TOK_COLON lista_comandos
+    {
+        $$ = new CaseNode(nullptr, adotar($3));
+        $$->linha = yylineno;
     }
     ;
 
@@ -452,7 +494,6 @@ exp:
     }
     | TOK_MINUS exp %prec UMINUS
     {
-        // Reutilizamos o nó binário, mas passando nullptr para o lado direito!
         auto* n = new OperacaoBinariaNode("-", adotar($2), nullptr);
         n->linha = yylineno;
         n->tipo_inferido = $2->tipo_inferido;
@@ -560,7 +601,7 @@ exp:
         n->tipo_inferido = "int";
         $$ = n;
     }
-    | TOK_ID TOK_LBRACKET exp TOK_RBRACKET  /* <--- NOVO: ler valor de v[i] */
+    | TOK_ID TOK_LBRACKET exp TOK_RBRACKET
     {
         Simbolo* s = buscarSimbolo($1, nivel_atual);
         if (!s)
@@ -583,14 +624,11 @@ exp:
         }
         auto* n = new ChamadaFuncaoNode($1, std::move(args));
         n->linha = yylineno;
-        
-        // Validação semântica opcional: checa se a função foi declarada
         Simbolo* s = buscarSimbolo($1, 0);
         if (s) n->tipo_inferido = s->tipo;
-        
         $$ = n;
     }
-    ; 
+    ;
 
 lista_argumentos:
     %empty

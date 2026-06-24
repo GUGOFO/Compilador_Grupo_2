@@ -106,6 +106,7 @@ int coluna = 1;
 ">"             { coluna += yyleng; return TOK_GT; }
 "!"             { coluna += yyleng; return TOK_LOGIC_NOT; }
 ";"             { coluna += yyleng; return TOK_SCOLON; }
+":"             { coluna += yyleng; return TOK_COLON; }
 ","             { coluna += yyleng; return TOK_COMMA; }
 "("             { coluna += yyleng; return TOK_LPAREN; }
 ")"             { coluna += yyleng; return TOK_RPAREN; }

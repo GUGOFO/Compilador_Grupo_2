@@ -638,6 +638,10 @@ public:
     }
 };
 
+// ======================================================================
+// 📦 CLASSES DOS VETORES (Mapeadas no seu Parser)
+// ======================================================================
+
 class DeclVetorNode : public ASTNode {
 public:
     std::string tipo;
@@ -716,6 +720,83 @@ public:
         fprintf(stderr, "%s := %s * 4\n", t_offset.c_str(), idx.c_str());
         indent(nivel, stderr);
         fprintf(stderr, "%s[%s] := %s\n", nome.c_str(), t_offset.c_str(), val.c_str());
+        return "";
+    }
+};
+
+class CaseNode : public ASTNode {
+public:
+    NodoPtr condicao;
+    NodoPtr comandos;
+
+    CaseNode(NodoPtr cond, NodoPtr cmds)
+        : condicao(std::move(cond)), comandos(std::move(cmds)) {}
+    
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr);
+        if (condicao) fprintf(stderr, "[Case]"); 
+        else fprintf(stderr, "[Default]");
+        printInfo(stderr);
+        fprintf(stderr, "\n");
+        if (condicao) condicao->print(nivel + 1);
+        if (comandos) comandos->print(nivel + 1);
+    }
+
+    void gerarC(int nivel = 0) const override {
+        indent(nivel);
+        if (condicao) {
+            printf("case ");
+            condicao->gerarC();
+            printf(":\n");
+        } else {
+            printf("default:\n");
+        }
+        if (comandos) comandos->gerarC(nivel + 1);
+    }
+
+    std::string gerarTAC(int nivel = 0) const override {
+        if (comandos) comandos->gerarTAC(nivel);
+        return "";
+    }
+};
+
+class SwitchNode : public ASTNode {
+public:
+    NodoPtr expressao;
+    std::vector<NodoPtr> cases;
+
+    SwitchNode(NodoPtr exp = nullptr) : expressao(std::move(exp)) {}
+
+    void adicionarCase(NodoPtr c) { cases.push_back(std::move(c));}
+
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr);
+        fprintf(stderr, "[Switch]"); 
+        printInfo(stderr);
+        fprintf(stderr, "\n");
+        if(expressao) expressao->print(nivel + 1);
+        for (auto& c : cases) {
+            if (c) c->print(nivel + 1);
+        }
+    }
+
+    void gerarC(int nivel = 0) const override {
+        indent(nivel);
+        printf("switch (");
+        if (expressao) expressao->gerarC();
+        printf(") {\n");
+        for (auto& c : cases) {
+            if (c) c->gerarC(nivel + 1);
+        }
+        indent(nivel);
+        printf("}\n");
+    }
+
+    std::string gerarTAC(int nivel = 0) const override {
+        if (expressao) expressao->gerarTAC(nivel);
+        for (auto& c : cases) {
+            if (c) c->gerarTAC(nivel);
+        }
         return "";
     }
 };
