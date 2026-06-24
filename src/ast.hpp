@@ -429,3 +429,67 @@ public:
         indent(nivel); printf("}\n");
     }
 };
+
+class CaseNode : public ASTNode {
+public:
+    NodoPtr condicao;
+    NodoPtr comandos;
+
+    CaseNode(NodoPtr cond, NodoPtr cmds)
+        : condicao(std::move(cond)), comandos(std::move(cmds)) {}
+    
+    void print(int nivel = 0) const override {
+        indent(nivel);
+        if (condicao) printf("[Case]"); 
+        else printf("[Default]");
+        printInfo();
+        printf("\n");
+        if (condicao) condicao->print(nivel + 1);
+        if (comandos) comandos->print(nivel + 1);
+    }
+
+    void gerarC(int nivel = 0) const override {
+        indent(nivel);
+        if (condicao) {
+            printf("case ");
+            condicao->gerarC();
+            printf(":\n");
+        } else {
+            printf("default:\n");
+        }
+        if (comandos) comandos->gerarC(nivel + 1);
+    }
+};
+
+class SwitchNode : public ASTNode {
+public:
+    NodoPtr expressao;
+    std::vector<NodoPtr> cases;
+
+    SwitchNode(NodoPtr exp = nullptr) : expressao(std::move(exp)) {}
+
+    void adicionarCase(NodoPtr c) { cases.push_back(std::move(c));}
+
+    void print(int nivel = 0) const override {
+        indent(nivel); 
+        printf("[Switch]"); 
+        printInfo(); 
+        printf("\n");
+        if(expressao) expressao->print(nivel + 1);
+        for (auto& c : cases) {
+            if (c) c->print(nivel + 1);
+        }
+    }
+
+    void gerarC(int nivel = 0) const override {
+        indent(nivel);
+        printf("switch (");
+        if (expressao) expressao->gerarC();
+        printf(") {\n");
+        for (auto& c : cases) {
+            if (c) c->gerarC(nivel + 1);
+        }
+        indent(nivel);
+        printf("}\n");
+    }
+};

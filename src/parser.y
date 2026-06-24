@@ -37,7 +37,7 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %token TOK_STD TOK_ENDL
 
 %token TOK_OUT TOK_IN TOK_SCOLON TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE
-%token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE
+%token TOK_LBRACKET TOK_RBRACKET TOK_COMMA TOK_SCOPE TOK_COLON
 %token TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD
 %token TOK_EQ TOK_NEQ TOK_LT TOK_GT TOK_LE TOK_GE
 %token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
@@ -56,7 +56,7 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %type <node> comando_return funcao bloco_escopo lista_comandos comando
 %type <node> comando_atribuicao comando_if 
 %type <node> comando_while comando_do_while comando_for
-
+%type <node> comando_switch lista_cases case_item default_item 
 %%
 
 programa:
@@ -146,6 +146,7 @@ comando:
     | comando_while      { $$ = $1; }
     | comando_do_while   { $$ = $1; }
     | comando_for        { $$ = $1; }
+    | comando_switch     { $$ = $1; }
     | TOK_BREAK TOK_SCOLON
     {
         $$ = new BreakNode();
@@ -299,6 +300,51 @@ comando_for:
         $$ = n;
     }
     ;
+
+comando_switch:
+    TOK_SWITCH TOK_LPAREN exp TOK_RPAREN TOK_LBRACE lista_cases TOK_RBRACE
+    {
+       auto* sw = static_cast<SwitchNode*>($6);
+       sw->expressao = adotar($3);
+       sw->linha = yylineno;
+       $$ = sw;
+    }
+    ;
+
+    lista_cases:
+        /* vazio */
+        {
+            $$ = new SwitchNode(nullptr);
+        }
+        | lista_cases case_item
+        {
+            auto* sw = static_cast<SwitchNode*>($1);
+            if ($2) sw->adicionarCase(adotar($2));
+            $$ = sw;
+        }
+        | lista_cases default_item
+        {
+            auto* sw = static_cast<SwitchNode*>($1);
+            if ($2) sw->adicionarCase(adotar($2));
+            $$ = sw;
+        }
+        ;
+    
+    case_item:
+        TOK_CASE exp TOK_COLON lista_comandos
+        {
+           $$ = new CaseNode(adotar($2), adotar($4));
+           $$->linha = yylineno;
+        }
+        ;
+
+    default_item:
+        TOK_DEFAULT TOK_COLON lista_comandos
+        {
+            $$ = new CaseNode(nullptr, adotar($3));
+            $$->linha = yylineno;
+        }
+        ;
 
 comando_return:
     TOK_RETURN exp TOK_SCOLON
