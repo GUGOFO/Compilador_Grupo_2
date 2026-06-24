@@ -3,6 +3,9 @@
 #include <vector>
 #include <memory>
 #include <cstdio>
+#include <set>
+
+extern std::set<std::string> variaveis_usadas;
 
 class ASTNode;
 using NodoPtr = std::unique_ptr<ASTNode>;
@@ -165,6 +168,9 @@ public:
     }
 };
 
+#include <set> // Garanta que está no topo do ast.hpp
+extern std::set<std::string> variaveis_usadas; // <--- IMPORTA A VARIÁVEL DO PARSER
+
 class DeclVarNode : public ASTNode {
 public:
     std::string tipo;
@@ -178,7 +184,12 @@ public:
         indent(nivel, stderr); fprintf(stderr, "[DeclVar: %s %s]", tipo.c_str(), nome.c_str()); printInfo(stderr); fprintf(stderr, "\n");
         if (inicializador) inicializador->print(nivel + 1);
     }
+    
     void gerarC(int nivel = 0) const override { 
+        // 🚀 OTIMIZAÇÃO SEGUNDO A REGRA AS-IF: Se a variável nunca foi usada, ela não vai para o código final!
+        if (variaveis_usadas.find(nome) == variaveis_usadas.end()) {
+            return; 
+        }
         indent(nivel);
         printf("%s %s", tipo.c_str(), nome.c_str());
         if (inicializador) {
@@ -187,7 +198,12 @@ public:
         }
         printf(";\n");
     }
+    
     std::string gerarTAC(int nivel = 0) const override {
+        // 🚀 OTIMIZAÇÃO: Se a variável nunca foi usada, ela também some do TAC!
+        if (variaveis_usadas.find(nome) == variaveis_usadas.end()) {
+            return ""; 
+        }
         if (inicializador) {
             std::string val = inicializador->gerarTAC(nivel);
             indent(nivel, stderr);
@@ -638,10 +654,6 @@ public:
     }
 };
 
-// ======================================================================
-// 📦 CLASSES DOS VETORES (Mapeadas no seu Parser)
-// ======================================================================
-
 class DeclVetorNode : public ASTNode {
 public:
     std::string tipo;
@@ -654,11 +666,20 @@ public:
     void print(int nivel = 0) const override {
         indent(nivel, stderr); fprintf(stderr, "[DeclVetor: %s %s[%d]]\n", tipo.c_str(), nome.c_str(), tamanho);
     }
+    
     void gerarC(int nivel = 0) const override { 
+        if (variaveis_usadas.find(nome) == variaveis_usadas.end()) {
+            return; 
+        }
         indent(nivel);
         printf("%s %s[%d];\n", tipo.c_str(), nome.c_str(), tamanho);
     }
+    
     std::string gerarTAC(int nivel = 0) const override {
+        // 🚀 OTIMIZAÇÃO: Também some do TAC!
+        if (variaveis_usadas.find(nome) == variaveis_usadas.end()) {
+            return ""; 
+        }
         return "";
     }
 };
