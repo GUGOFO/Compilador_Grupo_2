@@ -32,6 +32,7 @@ public:
     virtual void print(int nivel = 0)  const = 0;
     virtual void gerarC(int nivel = 0) const = 0;
     virtual std::string gerarTAC(int nivel = 0) const = 0;
+    virtual void otimizar(NodoPtr& auto_ponteiro) {}
 
 protected:
     void indent(int nivel, FILE* stream = stdout) const {
@@ -148,6 +149,80 @@ public:
         indent(nivel, stderr);
         fprintf(stderr, "%s := %s %s %s\n", temp.c_str(), esq.c_str(), operador.c_str(), dir.c_str());
         return temp;
+    }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (esquerda) esquerda->otimizar(esquerda);
+        if (direita) direita->otimizar(direita);
+
+        auto* intEsq = dynamic_cast<LiteralInteiroNode*>(esquerda.get());
+        auto* intDir = dynamic_cast<LiteralInteiroNode*>(direita.get());
+
+        //Constant Folding
+        if (intEsq && intDir) {
+            int v1 = intEsq->valor;
+            int v2 = intDir->valor;
+            int resultado = 0;
+            bool valido = true;
+
+            if (operador == "+") resultado = v1 + v2;
+            else if (operador == "-") resultado = v1 - v2;
+            else if (operador == "*") resultado = v1 * v2;
+            else if (operador == "/") {
+                if (v2 != 0) resultado = v1 / v2;
+                else valido = false;
+            }
+            else if (operador == "%") {
+                if (v2 != 0) resultado = v1 % v2;
+                else valido = false;
+            }
+            else {
+                valido = false; 
+            }
+            if (valido) {
+                auto novo_no = std::make_unique<LiteralInteiroNode>(resultado);
+                novo_no->linha = this->linha;
+                novo_no->tipo_inferido = "int";
+                auto_ponteiro = std::move(novo_no);
+                return;
+            }
+        }
+
+        //Simplificação Algébrica
+        if (intEsq && !intDir) {
+            if (operador == "+" && intEsq->valor == 0) {
+                auto filho_salvo = std::move(direita);
+                auto_ponteiro = std::move(filho_salvo);
+                return;
+            }
+            if (operador == "*" && intEsq->valor == 1) {
+                auto filho_salvo = std::move(direita);
+                auto_ponteiro = std::move(filho_salvo);
+                return;
+            }
+            if (operador == "*" && intEsq->valor == 0) {
+                auto_ponteiro = std::make_unique<LiteralInteiroNode>(0);
+                return;
+            }
+        }
+        if (!intEsq && intDir) {
+            if ((operador == "+" || operador == "-") && intDir->valor == 0) {
+                auto filho_salvo = std::move(esquerda);
+                auto_ponteiro = std::move(filho_salvo);
+                return;
+            }
+            if (operador == "*" && intDir->valor == 1) {
+                auto filho_salvo = std::move(esquerda);
+                auto_ponteiro = std::move(filho_salvo);
+                return;
+            }
+            if (operador == "*" && intDir->valor == 0) {
+                auto_ponteiro = std::make_unique<LiteralInteiroNode>(0);
+                return;
+            }
+        }
+
+        //Dead Code Elimination
+
     }
 };
 
@@ -310,6 +385,11 @@ public:
         }
         return "";
     }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        for (auto& cmd : comandos) {
+            if (cmd) cmd->otimizar(cmd);
+        }
+    }
 };
 
 class ChamadaFuncaoNode : public ASTNode {
@@ -392,6 +472,9 @@ public:
         fprintf(stderr, "end_func\n\n");
         return "";
     }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (corpo) corpo->otimizar(corpo);
+    }
 };
 
 class ProgramaNode : public ASTNode {
@@ -418,6 +501,11 @@ public:
         }
         fprintf(stderr, "----------------------------------\n\n");
         return "";
+    }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        for (auto& d : declaracoes) {
+            if (d) d->otimizar(d);
+        }
     }
 };
 
@@ -532,6 +620,11 @@ public:
         }
         return "";
     }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (condicao) condicao->otimizar(condicao);
+        if (entao) entao->otimizar(entao);
+        if (senao) senao->otimizar(senao);
+    }
 };
 
 class WhileNode : public ASTNode {
@@ -569,6 +662,10 @@ public:
         fprintf(stderr, "%s:\n", label_fim.c_str());
         return "";
     }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (condicao) condicao->otimizar(condicao);
+        if (corpo) corpo->otimizar(corpo);
+    }
 };
 
 class DoWhileNode : public ASTNode {
@@ -597,6 +694,10 @@ public:
         indent(nivel + 1, stderr);
         fprintf(stderr, "if %s goto %s\n", cond.c_str(), label_inicio.c_str());
         return "";
+    }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (condicao) condicao->otimizar(condicao);
+        if (corpo) corpo->otimizar(corpo);
     }
 };
 
@@ -651,6 +752,10 @@ public:
         fprintf(stderr, "goto %s\n", label_inicio.c_str());
         fprintf(stderr, "%s:\n", label_fim.c_str());
         return "";
+    }
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (condicao) condicao->otimizar(condicao);
+        if (corpo) corpo->otimizar(corpo);
     }
 };
 

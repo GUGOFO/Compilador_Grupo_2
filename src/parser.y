@@ -427,13 +427,12 @@ comando_if:
         auto* lit = dynamic_cast<LiteralInteiroNode*>($3);
         if (lit) {
             if (lit->valor == 0) {
+                delete $3;
+                delete $5;
                 $$ = new BlocoNode();
             } else {
-                auto* n = new BlocoNode();
-                n->adicionar(adotar($5));
-                auto* n_if = new IfNode(adotar($3), adotar($5));
-                n_if->linha = yylineno;
-                $$ = n_if;
+                delete $3;
+                $$ = $5;
             }
         } else {
             auto* n = new IfNode(adotar($3), adotar($5));
@@ -450,13 +449,13 @@ comando_if:
         auto* lit = dynamic_cast<LiteralInteiroNode*>($3);
         if (lit) {
             if (lit->valor == 0) {
-                auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
-                n->linha = yylineno;
-                $$ = n;
+                delete $3;
+                delete $5;
+                $$ = $7;
             } else {
-                auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
-                n->linha = yylineno;
-                $$ = n;
+                delete $3;
+                delete $7;
+                $$ = $5;
             }
         } else {
             auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
@@ -906,11 +905,33 @@ void yyerror(const char *s) {
 }
 
 int main() {
-    if (yyparse() != 0) {
+    int resultado_parse = yyparse();
+
+    if (resultado_parse != 0) {
         fprintf(stderr, "Falha no parsing.\n");
+        delete raiz;
         return 1;
     }
-    fprintf(stderr, "Transpilacao concluida com sucesso!\n");
+
+    if (resultado_parse == 0 && !erro_semantico_detectado && raiz) {
+        // Cria um NodoPtr temporário para segurar a raiz e permitir a otimização recursiva
+        // Como 'raiz' é um ponteiro bruto global (ProgramaNode*), otimizamos os filhos dele diretamente
+        
+        // Dispara a otimização na raiz do programa
+        std::unique_ptr<ASTNode> ponteiro_dummy(raiz);
+        raiz->otimizar(ponteiro_dummy);
+        ponteiro_dummy.release(); // Libera o ponteiro para não causar duplo free indesejado com o fluxo existente
+
+        // Restante do seu código original (ex: gerarC, imprimir árvore, etc.)
+        printf("// --- CÓDIGO OTIMIZADO GERADO ---\n");
+        raiz->gerarC(0);
+    } else {
+        fprintf(stderr, "Erro na compilação. Otimizações abortadas.\n");
+    }
+
+    if (resultado_parse == 0 && !erro_semantico_detectado)
+        fprintf(stderr, "Transpilacao concluida com sucesso!\n");
+
     delete raiz;
-    return 0;
+    return resultado_parse;
 }
