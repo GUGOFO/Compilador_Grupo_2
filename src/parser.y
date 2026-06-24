@@ -62,9 +62,21 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 programa:
     lista_declaracoes
     {
-        raiz->gerarC();
-        fprintf(stderr, "\n");
-        imprimirTabela();
+        // 1. Imprime a Árvore Sintática Estruturada
+        fprintf(stderr, "\n======================================================================\n");
+        fprintf(stderr, "                  🌳 ÁRVORE SINTÁTICA ABSTRATA (AST)\n");
+        fprintf(stderr, "======================================================================\n");
+        if (raiz) raiz->print();
+
+        // 2. Imprime o Código Intermediário
+        fprintf(stderr, "\n======================================================================\n");
+        fprintf(stderr, "                  ⚙️ GERAÇÃO DE CÓDIGO INTERMEDIÁRIO (TAC)\n");
+        fprintf(stderr, "======================================================================\n");
+        if (raiz) raiz->gerarTAC();
+        fprintf(stderr, "======================================================================\n");
+
+        // 3. Executa a transpilação final silenciosa para o arquivo .c (stdout)
+        if (raiz) raiz->gerarC();
     }
     ;
 
@@ -106,6 +118,10 @@ bloco_escopo:
     }
     lista_comandos TOK_RBRACE
     {
+        fprintf(stderr, "\n--- SVAL/ESCOPO FECHANDO (Nível %d) ---", nivel_atual);
+        imprimirTabela(); 
+        fprintf(stderr, "---------------------------------------\n");
+
         removerEscopo(nivel_atual);
         nivel_atual--;
         $$ = $3;
