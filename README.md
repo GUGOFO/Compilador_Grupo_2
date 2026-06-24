@@ -47,4 +47,4 @@ O sistema implementa o fluxo de tradução clássico dividido nas seguintes cama
 * **Análise Semântica (`tabela.c`):** Verificador de tipos (*Type Checker*), controle de escopo estático por meio de lista encadeada e inferência automática de expressões na árvore.
 * **Geração de Código Intermediário (TAC):** Emissão de Código de Três Endereços utilizando variáveis temporárias (`t0`, `t1`, ...) e rótulos de controle (`L0`, `L1`, ...) direcionados ao fluxo `stderr`.
 * **Otimização de Código (`ast.hpp`):** Algoritmos recursivos que caminham sobre os nós da AST aplicando podas e transformações em tempo de compilação.
-* **Geração de Código Alvo (`ast.hpp`):** Tradução estruturada da AST higienizada para código de linguagem C padrão, incluindo cabeçalhos essenciais, direcionada ao fluxo `stdout`.
+* **Geração de Código Final (`ast.hpp`):** Tradução estruturada da AST higienizada para código de linguagem C padrão, incluindo cabeçalhos essenciais, direcionada ao fluxo `stdout`.
