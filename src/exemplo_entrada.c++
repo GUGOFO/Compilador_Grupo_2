@@ -17,6 +17,10 @@ int main() {
     char turma = 'A';
     int saldo = -150;
     int meuVetor[5];
+
+    int testeErro1 = "Uma string qualquer";
+    idade = true + "texto";               
+    meuVetor[true] = 45;
     
     std::cout << "--- INICIANDO TESTES DO COMPILADOR ---";
     std::cout << "\n";

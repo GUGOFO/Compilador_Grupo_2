@@ -67,7 +67,7 @@ public:
         indent(nivel, stderr); fprintf(stderr, "[LiteralFloat: %g]", valor); printInfo(stderr); fprintf(stderr, "\n");
     }
     void gerarC(int nivel = 0) const override { 
-        printf("%g", valor); 
+        printf("%f", valor); // <--- ALTERADO DE %g PARA %f (Garante o .0000 no C)
     }
     std::string gerarTAC(int nivel = 0) const override {
         return std::to_string(valor);

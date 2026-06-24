@@ -15,8 +15,26 @@ extern char* yytext;
 
 ProgramaNode* raiz        = nullptr;
 int           nivel_atual = 0;
+bool          erro_semantico_detectado = false;
 
 static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
+
+bool es_tipo_numerico(const std::string& t) {
+    return t == "int" || t == "float" || t == "double" || t == "long" || t == "short" || t == "char";
+}
+
+std::string obter_tipo_resultado(const std::string& t1, const std::string& t2) {
+    if (t1 == "double" || t2 == "double") return "double";
+    if (t1 == "float" || t2 == "float") return "float";
+    if (t1 == "long" || t2 == "long") return "long";
+    return "int";
+}
+
+bool verificar_atribuicao_ok(const std::string& destino, const std::string& origem) {
+    if (destino == origem) return true;
+    if (es_tipo_numerico(destino) && es_tipo_numerico(origem)) return true;
+    return false;
+}
 %}
 
 %union {
@@ -77,7 +95,12 @@ programa:
         if (raiz) raiz->gerarTAC();
         fprintf(stderr, "======================================================================\n");
 
-        // 3. Executa a transpilação final silenciosa para o arquivo .c (stdout)
+        if (erro_semantico_detectado) {
+            fprintf(stderr, "\n❌ Falha na compilacao: Erros semanticos detectados. Pipeline abortado.\n\n");
+            exit(1); 
+        }
+
+        // 3. Executa a transpilação final para o arquivo .c (stdout)
         if (raiz) raiz->gerarC();
     }
     ;
@@ -236,6 +259,13 @@ declaracao_var:
     tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON
     {
         inserirSimbolo($2, $1, nivel_atual);
+        
+        if (!verificar_atribuicao_ok($1, $4->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): tipo '%s' incompativel com '%s' na declaracao de '%s'\n", 
+                    yylineno, $4->tipo_inferido.c_str(), $1, $2);
+            erro_semantico_detectado = true;
+        }
+        
         auto* n = new DeclVarNode($1, $2, adotar($4));
         n->linha = yylineno;
         $$ = n;
@@ -261,32 +291,61 @@ comando_atribuicao:
     TOK_ID TOK_ASSIGN exp TOK_SCOLON
     {
         Simbolo* s = buscarSimbolo($1, nivel_atual);
-        if (!s)
+        if (!s) {
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+            erro_semantico_detectado = true; 
+        } else {
+            if (!verificar_atribuicao_ok(s->tipo, $3->tipo_inferido)) {
+                fprintf(stderr, "Erro semantico (linha %d): tipo '%s' incompativel com '%s' na atribuicao de '%s'\n", 
+                        yylineno, $3->tipo_inferido.c_str(), s->tipo, $1);
+                erro_semantico_detectado = true;
+            }
+        }
+        
         auto* n = new AssignNode($1, "=", adotar($3));
         n->linha = yylineno;
         $$ = n;
     }
     | TOK_ID TOK_ADD_ASSIGN exp TOK_SCOLON
     {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (s && (!es_tipo_numerico(s->tipo) || !es_tipo_numerico($3->tipo_inferido))) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '+=' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, s->tipo, $3->tipo_inferido.c_str());
+        }
         auto* n = new AssignNode($1, "+=", adotar($3));
         n->linha = yylineno;
         $$ = n;
     }
     | TOK_ID TOK_SUB_ASSIGN exp TOK_SCOLON
     {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (s && (!es_tipo_numerico(s->tipo) || !es_tipo_numerico($3->tipo_inferido))) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '-=' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, s->tipo, $3->tipo_inferido.c_str());
+        }
         auto* n = new AssignNode($1, "-=", adotar($3));
         n->linha = yylineno;
         $$ = n;
     }
     | TOK_ID TOK_MULT_ASSIGN exp TOK_SCOLON
     {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (s && (!es_tipo_numerico(s->tipo) || !es_tipo_numerico($3->tipo_inferido))) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '*=' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, s->tipo, $3->tipo_inferido.c_str());
+        }
         auto* n = new AssignNode($1, "*=", adotar($3));
         n->linha = yylineno;
         $$ = n;
     }
     | TOK_ID TOK_DIV_ASSIGN exp TOK_SCOLON
     {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (s && (!es_tipo_numerico(s->tipo) || !es_tipo_numerico($3->tipo_inferido))) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '/=' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, s->tipo, $3->tipo_inferido.c_str());
+        }
         auto* n = new AssignNode($1, "/=", adotar($3));
         n->linha = yylineno;
         $$ = n;
@@ -300,8 +359,24 @@ comando_atribuicao:
     | TOK_ID TOK_LBRACKET exp TOK_RBRACKET TOK_ASSIGN exp TOK_SCOLON
     {
         Simbolo* s = buscarSimbolo($1, nivel_atual);
-        if (!s)
+        if (!s) {
             fprintf(stderr, "Erro semantico (linha %d): vetor '%s' nao declarado.\n", yylineno, $1);
+            erro_semantico_detectado = true;
+        } else {
+            if ($3->tipo_inferido != "int") {
+                fprintf(stderr, "Erro semantico (linha %d): o indice do vetor deve ser 'int' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+                erro_semantico_detectado = true;
+            }
+            std::string t_base = s->tipo;
+            if (t_base.size() > 2 && t_base.substr(t_base.size() - 2) == "[]") {
+                t_base = t_base.substr(0, t_base.size() - 2);
+            }
+            if (!verificar_atribuicao_ok(t_base, $6->tipo_inferido)) {
+                fprintf(stderr, "Erro semantico (linha %d): tipo '%s' incompativel com o tipo base do vetor '%s' ('%s')\n", 
+                        yylineno, $6->tipo_inferido.c_str(), $1, t_base.c_str());
+                erro_semantico_detectado = true;
+            }
+        }
         auto* n = new ArrayAssignNode($1, adotar($3), adotar($6));
         n->linha = yylineno;
         $$ = n;
@@ -311,12 +386,18 @@ comando_atribuicao:
 comando_if:
     TOK_IF TOK_LPAREN exp TOK_RPAREN bloco_escopo
     {
+        if ($3->tipo_inferido != "bool") {
+            fprintf(stderr, "Erro semantico (linha %d): a condicao do 'if' deve ser 'bool' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+        }
         auto* n = new IfNode(adotar($3), adotar($5));
         n->linha = yylineno;
         $$ = n;
     }
     | TOK_IF TOK_LPAREN exp TOK_RPAREN bloco_escopo TOK_ELSE bloco_escopo
     {
+        if ($3->tipo_inferido != "bool") {
+            fprintf(stderr, "Erro semantico (linha %d): a condicao do 'if' deve ser 'bool' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+        }
         auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
         n->linha = yylineno;
         $$ = n;
@@ -326,6 +407,9 @@ comando_if:
 comando_while:
     TOK_WHILE TOK_LPAREN exp TOK_RPAREN bloco_escopo
     {
+        if ($3->tipo_inferido != "bool") {
+            fprintf(stderr, "Erro semantico (linha %d): a condicao do 'while' deve ser 'bool' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+        }
         auto* n = new WhileNode(adotar($3), adotar($5));
         n->linha = yylineno;
         $$ = n;
@@ -335,6 +419,9 @@ comando_while:
 comando_do_while:
     TOK_DO bloco_escopo TOK_WHILE TOK_LPAREN exp TOK_RPAREN TOK_SCOLON
     {
+        if ($5->tipo_inferido != "bool") {
+            fprintf(stderr, "Erro semantico (linha %d): a condicao do 'do-while' deve ser 'bool' (recebeu '%s')\n", yylineno, $5->tipo_inferido.c_str());
+        }
         auto* n = new DoWhileNode(adotar($2), adotar($5));
         n->linha = yylineno;
         $$ = n;
@@ -484,18 +571,38 @@ exp:
     {
         auto* n = new OperacaoBinariaNode("+", adotar($1), adotar($3));
         n->linha = yylineno;
+        
+        if (!es_tipo_numerico($1->tipo_inferido) || !es_tipo_numerico($3->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '+' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+            erro_semantico_detectado = true;
+            n->tipo_inferido = "desconhecido";
+        } else {
+            n->tipo_inferido = obter_tipo_resultado($1->tipo_inferido, $3->tipo_inferido);
+        }
         $$ = n;
     }
     | exp TOK_MINUS exp
     {
         auto* n = new OperacaoBinariaNode("-", adotar($1), adotar($3));
         n->linha = yylineno;
+        if (!es_tipo_numerico($1->tipo_inferido) || !es_tipo_numerico($3->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '-' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+            n->tipo_inferido = "desconhecido";
+        } else {
+            n->tipo_inferido = obter_tipo_resultado($1->tipo_inferido, $3->tipo_inferido);
+        }
         $$ = n;
     }
     | TOK_MINUS exp %prec UMINUS
     {
         auto* n = new OperacaoBinariaNode("-", adotar($2), nullptr);
         n->linha = yylineno;
+        if (!es_tipo_numerico($2->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): operador unario '-' nao suportado para o tipo '%s'\n", 
+                    yylineno, $2->tipo_inferido.c_str());
+        }
         n->tipo_inferido = $2->tipo_inferido;
         $$ = n;
     }
@@ -503,18 +610,37 @@ exp:
     {
         auto* n = new OperacaoBinariaNode("*", adotar($1), adotar($3));
         n->linha = yylineno;
+        if (!es_tipo_numerico($1->tipo_inferido) || !es_tipo_numerico($3->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '*' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+            n->tipo_inferido = "desconhecido";
+        } else {
+            n->tipo_inferido = obter_tipo_resultado($1->tipo_inferido, $3->tipo_inferido);
+        }
         $$ = n;
     }
     | exp TOK_DIV exp
     {
         auto* n = new OperacaoBinariaNode("/", adotar($1), adotar($3));
         n->linha = yylineno;
+        if (!es_tipo_numerico($1->tipo_inferido) || !es_tipo_numerico($3->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): operador '/' nao suportado entre '%s' e '%s'\n", 
+                    yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+            n->tipo_inferido = "desconhecido";
+        } else {
+            n->tipo_inferido = obter_tipo_resultado($1->tipo_inferido, $3->tipo_inferido);
+        }
         $$ = n;
     }
     | exp TOK_MOD exp
     {
         auto* n = new OperacaoBinariaNode("%", adotar($1), adotar($3));
         n->linha = yylineno;
+        if ($1->tipo_inferido != "int" || $3->tipo_inferido != "int") {
+            fprintf(stderr, "Erro semantico (linha %d): operador '%%' exige operandos do tipo 'int' (recebeu '%s' e '%s')\n", 
+                    yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+        }
+        n->tipo_inferido = "int";
         $$ = n;
     }
     | exp TOK_EQ exp
@@ -617,14 +743,24 @@ exp:
     }
     | TOK_ID TOK_LPAREN lista_argumentos TOK_RPAREN
     {
+        Simbolo* s = buscarSimbolo($1, 0);
+        if (!s) {
+            fprintf(stderr, "Erro semantico (linha %d): funcao '%s' nao declarada.\n", yylineno, $1);
+            erro_semantico_detectado = true;
+        }
+        
+        // Como a struct Simbolo não tem campos de parâmetros, 
+        // saltamos a validação de aridade (número de argumentos) 
+        // para não quebrar a compilação, mas mantemos a chamada.
+        
         std::vector<NodoPtr> args;
         if ($3) {
             for (auto* n : *$3) args.push_back(adotar(n));
             delete $3;
         }
+        
         auto* n = new ChamadaFuncaoNode($1, std::move(args));
         n->linha = yylineno;
-        Simbolo* s = buscarSimbolo($1, 0);
         if (s) n->tipo_inferido = s->tipo;
         $$ = n;
     }
