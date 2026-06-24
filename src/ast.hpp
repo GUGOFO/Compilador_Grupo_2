@@ -637,3 +637,85 @@ public:
         return "";
     }
 };
+
+class DeclVetorNode : public ASTNode {
+public:
+    std::string tipo;
+    std::string nome;
+    int tamanho;
+
+    DeclVetorNode(std::string t, std::string n, int tam)
+        : tipo(t), nome(n), tamanho(tam) {}
+
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr); fprintf(stderr, "[DeclVetor: %s %s[%d]]\n", tipo.c_str(), nome.c_str(), tamanho);
+    }
+    void gerarC(int nivel = 0) const override { 
+        indent(nivel);
+        printf("%s %s[%d];\n", tipo.c_str(), nome.c_str(), tamanho);
+    }
+    std::string gerarTAC(int nivel = 0) const override {
+        return "";
+    }
+};
+
+class ArrayAccessNode : public ASTNode {
+public:
+    std::string nome;
+    NodoPtr indice;
+
+    ArrayAccessNode(std::string n, NodoPtr idx)
+        : nome(n), indice(std::move(idx)) {}
+
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr); fprintf(stderr, "[ArrayAccess: %s]\n", nome.c_str());
+        if (indice) indice->print(nivel + 1);
+    }
+    void gerarC(int nivel = 0) const override { 
+        printf("%s[", nome.c_str()); if (indice) indice->gerarC(); printf("]");
+    }
+    std::string gerarTAC(int nivel = 0) const override {
+        std::string idx = indice ? indice->gerarTAC(nivel) : "0";
+        std::string t_offset = GeradorTAC::novo_temporario();
+        
+        indent(nivel, stderr);
+        fprintf(stderr, "%s := %s * 4\n", t_offset.c_str(), idx.c_str());
+        
+        std::string t_val = GeradorTAC::novo_temporario();
+        indent(nivel, stderr);
+        fprintf(stderr, "%s := %s[%s]\n", t_val.c_str(), nome.c_str(), t_offset.c_str());
+        return t_val;
+    }
+};
+
+class ArrayAssignNode : public ASTNode {
+public:
+    std::string nome;
+    NodoPtr indice;
+    NodoPtr valor;
+
+    ArrayAssignNode(std::string n, NodoPtr idx, NodoPtr val)
+        : nome(n), indice(std::move(idx)), valor(std::move(val)) {}
+
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr); fprintf(stderr, "[ArrayAssign: %s]\n", nome.c_str());
+        if (indice) indice->print(nivel + 1);
+        if (valor) valor->print(nivel + 1);
+    }
+    void gerarC(int nivel = 0) const override { 
+        indent(nivel);
+        printf("%s[", nome.c_str()); if (indice) indice->gerarC(); printf("] = ");
+        if (valor) valor->gerarC(); printf(";\n");
+    }
+    std::string gerarTAC(int nivel = 0) const override {
+        std::string idx = indice ? indice->gerarTAC(nivel) : "0";
+        std::string val = valor ? valor->gerarTAC(nivel) : "0";
+        std::string t_offset = GeradorTAC::novo_temporario();
+        
+        indent(nivel, stderr);
+        fprintf(stderr, "%s := %s * 4\n", t_offset.c_str(), idx.c_str());
+        indent(nivel, stderr);
+        fprintf(stderr, "%s[%s] := %s\n", nome.c_str(), t_offset.c_str(), val.c_str());
+        return "";
+    }
+};

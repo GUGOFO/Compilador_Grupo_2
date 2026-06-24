@@ -248,6 +248,14 @@ declaracao_var:
         n->linha = yylineno;
         $$ = n;
     }
+    | tipo TOK_ID TOK_LBRACKET TOK_INT_LIT TOK_RBRACKET TOK_SCOLON  /* <--- NOVO: int v[10]; */
+    {
+        std::string tipo_vetor = std::string($1) + "[]";
+        inserirSimbolo($2, strdup(tipo_vetor.c_str()), nivel_atual);
+        auto* n = new DeclVetorNode($1, $2, $4);
+        n->linha = yylineno;
+        $$ = n;
+    }
     ;
 
 comando_atribuicao:
@@ -287,6 +295,15 @@ comando_atribuicao:
     | TOK_ID TOK_MOD_ASSIGN exp TOK_SCOLON
     {
         auto* n = new AssignNode($1, "%=", adotar($3));
+        n->linha = yylineno;
+        $$ = n;
+    }
+    | TOK_ID TOK_LBRACKET exp TOK_RBRACKET TOK_ASSIGN exp TOK_SCOLON  /* <--- NOVO: v[i] = x; */
+    {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (!s)
+            fprintf(stderr, "Erro semantico (linha %d): vetor '%s' nao declarado.\n", yylineno, $1);
+        auto* n = new ArrayAssignNode($1, adotar($3), adotar($6));
         n->linha = yylineno;
         $$ = n;
     }
@@ -541,6 +558,20 @@ exp:
         auto* n = new ExpParenNode(adotar($3));
         n->linha = yylineno;
         n->tipo_inferido = "int";
+        $$ = n;
+    }
+    | TOK_ID TOK_LBRACKET exp TOK_RBRACKET  /* <--- NOVO: ler valor de v[i] */
+    {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (!s)
+            fprintf(stderr, "Erro semantico (linha %d): vetor '%s' nao declarado.\n", yylineno, $1);
+        auto* n = new ArrayAccessNode($1, adotar($3));
+        n->linha = yylineno;
+        if (s) {
+            std::string t = s->tipo;
+            if (t.size() > 2 && t.substr(t.size()-2) == "[]") n->tipo_inferido = t.substr(0, t.size()-2);
+            else n->tipo_inferido = t;
+        }
         $$ = n;
     }
     | TOK_ID TOK_LPAREN lista_argumentos TOK_RPAREN

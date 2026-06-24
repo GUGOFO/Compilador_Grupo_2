@@ -16,6 +16,7 @@ int main() {
     bool reprovado = false;
     char turma = 'A';
     int saldo = -150;
+    int meuVetor[5];
     
     std::cout << "--- INICIANDO TESTES DO COMPILADOR ---";
     std::cout << "\n";
@@ -81,6 +82,11 @@ int main() {
         std::cout << idade * 1.0;
         std::cout << "\n";
     }
+
+    meuVetor[2] = 88;
+    int valorVetor = meuVetor[2];
+    std::cout << valorVetor * 1.0;
+    std::cout << "\n";
 
     std::cout << "Idade global intacta (devera ser 21): ";
     std::cout << idade * 1.0;
