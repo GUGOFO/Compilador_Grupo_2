@@ -24,6 +24,7 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
     float    fval;
     char* sval;
     ASTNode* node;
+    std::vector<ASTNode*>* list;
 }
 
 %token <sval> TOK_ID TOK_STRING_LIT
@@ -55,7 +56,8 @@ static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 %type <node> exp declaracao declaracao_var comando_cout comando_cin
 %type <node> comando_return funcao bloco_escopo lista_comandos comando
 %type <node> comando_atribuicao comando_if 
-%type <node> comando_while comando_do_while comando_for
+%type <node> comando_while comando_do_while comando_for parametro
+%type <list> lista_parametros lista_argumentos
 
 %%
 
@@ -99,18 +101,52 @@ declaracao:
     ;
 
 funcao:
-    tipo TOK_ID TOK_LPAREN TOK_RPAREN
+    tipo TOK_ID TOK_LPAREN lista_parametros TOK_RPAREN
     {
-        inserirSimbolo($2, $1, 0);
+        inserirSimbolo($2, $1, 0); // Registra a função no escopo global
     }
     bloco_escopo
     {
-        auto* fn = new FuncaoNode($1, $2, adotar($6));
+        // Converte o std::vector<ASTNode*>* para um std::vector<NodoPtr>
+        std::vector<NodoPtr> params;
+        if ($4) {
+            for (auto* n : *$4) params.push_back(adotar(n));
+            delete $4; // Limpa o vetor temporário do Bison
+        }
+        auto* fn = new FuncaoNode($1, $2, std::move(params), adotar($7));
         fn->linha = yylineno;
         $$ = fn;
     }
     ;
 
+lista_parametros:
+    %empty
+    {
+        $$ = new std::vector<ASTNode*>();
+    }
+    | parametro
+    {
+        $$ = new std::vector<ASTNode*>();
+        $$->push_back($1);
+    }
+    | lista_parametros TOK_COMMA parametro
+    {
+        $1->push_back($3);
+        $$ = $1;
+    }
+    ;
+
+parametro:
+    tipo TOK_ID
+    {
+        // Insere o parâmetro no escopo da função (nivel_atual + 1)
+        inserirSimbolo($2, $1, nivel_atual + 1);
+        auto* n = new DeclVarNode($1, $2);
+        n->linha = yylineno;
+        $$ = n;
+    }
+    ;
+    
 bloco_escopo:
     TOK_LBRACE
     {
@@ -507,7 +543,41 @@ exp:
         n->tipo_inferido = "int";
         $$ = n;
     }
+    | TOK_ID TOK_LPAREN lista_argumentos TOK_RPAREN
+    {
+        std::vector<NodoPtr> args;
+        if ($3) {
+            for (auto* n : *$3) args.push_back(adotar(n));
+            delete $3;
+        }
+        auto* n = new ChamadaFuncaoNode($1, std::move(args));
+        n->linha = yylineno;
+        
+        // Validação semântica opcional: checa se a função foi declarada
+        Simbolo* s = buscarSimbolo($1, 0);
+        if (s) n->tipo_inferido = s->tipo;
+        
+        $$ = n;
+    }
+    ; 
+
+lista_argumentos:
+    %empty
+    {
+        $$ = new std::vector<ASTNode*>();
+    }
+    | exp
+    {
+        $$ = new std::vector<ASTNode*>();
+        $$->push_back($1);
+    }
+    | lista_argumentos TOK_COMMA exp
+    {
+        $1->push_back($3);
+        $$ = $1;
+    }
     ;
+
 %%
 
 void yyerror(const char *s) {

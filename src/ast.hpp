@@ -296,25 +296,80 @@ public:
     }
 };
 
+class ChamadaFuncaoNode : public ASTNode {
+public:
+    std::string nome;
+    std::vector<NodoPtr> argumentos;
+
+    ChamadaFuncaoNode(std::string n, std::vector<NodoPtr> args)
+        : nome(n), argumentos(std::move(args)) {}
+
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr); fprintf(stderr, "[ChamadaFuncao: %s]\n", nome.c_str());
+        for (auto& arg : argumentos) {
+            if (arg) arg->print(nivel + 1);
+        }
+    }
+
+    void gerarC(int nivel = 0) const override {
+        printf("%s(", nome.c_str());
+        for (size_t i = 0; i < argumentos.size(); ++i) {
+            if (argumentos[i]) argumentos[i]->gerarC();
+            if (i + 1 < argumentos.size()) printf(", ");
+        }
+        printf(")");
+    }
+
+    std::string gerarTAC(int nivel = 0) const override {
+        std::vector<std::string> temps;
+        for (auto& arg : argumentos) {
+            if (arg) temps.push_back(arg->gerarTAC(nivel));
+        }
+        
+        for (const auto& t : temps) {
+            indent(nivel, stderr);
+            fprintf(stderr, "param %s\n", t.c_str());
+        }
+
+        std::string temp_retorno = GeradorTAC::novo_temporario();
+        indent(nivel, stderr);
+        fprintf(stderr, "%s := call %s, %lu\n", temp_retorno.c_str(), nome.c_str(), argumentos.size());
+        return temp_retorno;
+    }
+};
+
 class FuncaoNode : public ASTNode {
 public:
     std::string tipo_retorno;
     std::string nome;
+    std::vector<NodoPtr> parametros;
     NodoPtr     corpo;
 
-    FuncaoNode(std::string t, std::string n, NodoPtr c)
-        : tipo_retorno(t), nome(n), corpo(std::move(c)) {}
+    FuncaoNode(std::string t, std::string n, std::vector<NodoPtr> params, NodoPtr c)
+        : tipo_retorno(t), nome(n), parametros(std::move(params)), corpo(std::move(c)) {}
 
     void print(int nivel = 0) const override {
-        indent(nivel, stderr); fprintf(stderr, "[Funcao: %s %s]", tipo_retorno.c_str(), nome.c_str()); printInfo(stderr); fprintf(stderr, "\n");
+        indent(nivel, stderr); fprintf(stderr, "[Funcao: %s %s]\n", tipo_retorno.c_str(), nome.c_str());
+        for (auto& p : parametros) {
+            if (p) p->print(nivel + 1);
+        }
         if (corpo) corpo->print(nivel + 1);
     }
+
     void gerarC(int nivel = 0) const override {
         indent(nivel);
-        printf("%s %s() {\n", tipo_retorno.c_str(), nome.c_str());
+        printf("%s %s(", tipo_retorno.c_str(), nome.c_str());
+        for (size_t i = 0; i < parametros.size(); ++i) {
+            if (auto* d = dynamic_cast<DeclVarNode*>(parametros[i].get())) {
+                printf("%s %s", d->tipo.c_str(), d->nome.c_str());
+            }
+            if (i + 1 < parametros.size()) printf(", ");
+        }
+        printf(") {\n");
         if (corpo) corpo->gerarC(nivel + 1);
         indent(nivel); printf("}\n");
     }
+
     std::string gerarTAC(int nivel = 0) const override {
         fprintf(stderr, "begin_func %s\n", nome.c_str());
         if (corpo) corpo->gerarTAC(nivel + 1);

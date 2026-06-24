@@ -4,6 +4,10 @@
   =========================================
 */
 
+int calcularDobro(int numero) {
+    return numero * 2;
+}
+
 int main() {
     int idade = 21;
     float nota = 9.5;
@@ -80,6 +84,12 @@ int main() {
 
     std::cout << "Idade global intacta (devera ser 21): ";
     std::cout << idade * 1.0;
+    std::cout << "\n";
+
+    std::cout << "Testando Chamada de Funcao (Dobro de 25): ";
+    std::cout << "\n";
+    int resultado = calcularDobro(25);
+    std::cout << resultado * 1.0;
     std::cout << "\n";
     
     std::cout << "SUCESSO ABSOLUTO!";
