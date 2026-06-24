@@ -6,135 +6,95 @@ nav_order: 2
 
 # Tabela de Símbolos
 
-A tabela de símbolos é a estrutura de dados central da análise semântica. Ela funciona como um cadastro de tudo que foi declarado no programa: variáveis, funções e parâmetros. O analisador consulta essa tabela toda vez que encontra um identificador no código, pra verificar se ele existe, qual é o tipo e se está sendo usado corretamente.
+A Tabela de Símbolos é a estrutura de dados central da análise semântica. Ela atua como um repositório dinâmico contendo o registro de todos os identificadores (variáveis, vetores e funções) declarados ao longo do programa, permitindo consultas contextuais rápidas durante a checagem de tipos e a validação de escopos.
 
-## Campos da tabela
+## Campos da Tabela Real do Projeto
 
-Cada entrada na tabela guarda as seguintes informações:
+Cada registro inserido na nossa tabela de símbolos armazena estritamente as seguintes informações estruturadas em C/C++:
 
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `nome` | string | nome do identificador como foi escrito no código |
-| `categoria` | enum | se é uma `variavel`, `funcao` ou `parametro` |
-| `tipo` | string | tipo de dado declarado: `int`, `float`, `double`, `bool`, `char`, `void` etc. |
-| `nivel_escopo` | inteiro | nível de aninhamento onde foi declarado (0 = global, 1 = dentro de uma função, 2 = dentro de um bloco `if`/`while`...) |
-| `linha_declaracao` | inteiro | linha do código fonte onde o símbolo foi declarado |
-| `inicializada` | booleano | se a variável já recebeu algum valor antes de ser usada |
-| `valor_inicial` | string | valor com que foi inicializada, se houver |
-| `tamanho` | inteiro | pra arrays: quantos elementos tem; pra variáveis simples é sempre 1 |
+| `nome` | char[36] | O nome textual do identificador como foi escrito pelo programador. |
+| `tipo` | char[20] | O tipo de dado associado (`int`, `float`, `double`, `bool`, `char`, `void` ou a notação `[]` para indicar vetores). |
+| `escopo` | int | O nível de aninhamento numérico onde o identificador foi declarado (0 = escopo global, 1 = funções/variáveis locais da main, 2+ = blocos internos). |
 
 ## Exemplo
 
 Dado o seguinte código C++:
 
 ```cpp
-int contador = 0;
 
-int soma(int a, int b) {
-    int resultado = a + b;
-    return resultado;
+int calcularDobro(int numero) {
+    return numero * 2;
 }
 
 int main() {
-    float media = 7.5;
-    bool aprovado = true;
+    int idade = 21;
+    int meuVetor[5];
 }
+
 ```
 
-A tabela de símbolos gerada seria:
+As chamadas internas de depuração do compilador (`imprimirTabela()`) refletem as tabelas de símbolos nos fechamentos de escopo da seguinte maneira:
 
-| nome | categoria | tipo | nivel_escopo | linha_declaracao | inicializada | valor_inicial | tamanho |
-|---|---|---|---|---|---|---|---|
-| `contador` | variavel | `int` | 0 | 1 | sim | `0` | 1 |
-| `soma` | funcao | `int` | 0 | 3 | sim | — | 1 |
-| `a` | parametro | `int` | 1 | 3 | sim | — | 1 |
-| `b` | parametro | `int` | 1 | 3 | sim | — | 1 |
-| `resultado` | variavel | `int` | 1 | 4 | sim | `a + b` | 1 |
-| `main` | funcao | `int` | 0 | 8 | sim | — | 1 |
-| `media` | variavel | `float` | 1 | 9 | sim | `7.5` | 1 |
-| `aprovado` | variavel | `bool` | 1 | 10 | sim | `true` | 1 |
+* **Ao fechar o escopo da função `calcularDobro` (Nível 1):**
+    * Nome: `numero`, Tipo: `int`, Escopo: `1`
+    * Nome: `calcularDobro`, Tipo: `int`, Escopo: `0`
 
-`resultado`, `a` e `b` pertencem ao nível de escopo `1` (dentro da função `soma`), enquanto `contador`, `soma` e `main` pertencem ao nível `0` (escopo global).
+* **Ao fechar o escopo da função `main` (Nível 1):**
+    * Nome: `calcularDobro`, Tipo: `int`, Escopo: `0`
+    * Nome: `main`, Tipo: `int`, Escopo: `0`
+    * Nome: `idade`, Tipo: `int`, Escopo: `1`
+    * Nome: `meuVetor`, Tipo: `int[]`, Escopo: `1`
+
+## Gerenciamento Dinâmico de Escopos
+
+O escopo é gerenciado por meio de um contador numérico global (`nivel_atual`) controlado incrementalmente pelo Bison. Toda vez que o parser abre um caractere `{`, o nível de escopo é incrementado. Quando o caractere `}` correspondente é fechado, a função `removerEscopo(nivel_atual)` é acionada, realizando uma varredura na lista encadeada da tabela para desalocar da memória e descartar todos os símbolos pertencentes àquele nível que acabou de expirar, mantendo as variáveis superiores protegidas contra colisões.
 
 ## Gerenciamento de escopos
 
-O escopo define em que parte do programa um identificador existe. O analisador gerencia os escopos usando uma pilha: toda vez que entra em um novo bloco `{`, um novo nível é empilhado; quando o bloco `}` é fechado, esse nível é desempilhado e todos os símbolos declarados nele são descartados.
+O escopo é gerenciado por meio de um contador numérico global (nivel_atual) controlado incrementalmente pelo Bison.
+Toda vez que o parser abre um caractere {, o nível de escopo é incrementado. Quando o caractere } correspondente é fechado, a função removerEscopo(nivel_atual) é acionada, realizando uma varredura na lista encadeada da tabela para desalocar da memória e descartar todos os símbolos pertencentes àquele nível que acabou de expirar, mantendo as variáveis superiores protegidas contra colisões.
 
-```
-Início do programa
-└── Escopo 0 (global)
-    ├── int contador = 0
-    ├── int soma(...)
-    │   └── Escopo 1 (função soma)
-    │       ├── int a
-    │       ├── int b
-    │       └── int resultado
-    │   ← ao fechar }, nível 1 é descartado
-    └── int main()
-        └── Escopo 1 (função main)
-            ├── float media
-            └── bool aprovado
-        ← ao fechar }, nível 1 é descartado
-```
+## Integração Real no Arquivo parser.y
 
-## Sombreamento de variável
+Diferente de um transpilador ingênuo baseado em macros textuais, nosso analisador semântico realiza as verificações de tipo e escopo diretamente nas ações gramaticais do Bison antes de acoplar os nós na Árvore Sintática Abstrata (AST):
 
-C++ permite que uma variável interna tenha o mesmo nome de uma variável externa. O analisador sempre usa a declaração mais recente (a mais próxima na pilha):
+1. Na Declaração de Variável:
 
 ```cpp
-int x = 100;
-
-int main() {
-    int x = 5;
-    return x; // usa o x do nível 1, que vale 5
+tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON
+{
+    // A própria função inserirSimbolo aborta o programa se houver redefinição no mesmo escopo
+    inserirSimbolo($2, $1, nivel_atual);
+    
+    if (!verificar_atribuicao_ok($1, $4->tipo_inferido)) {
+        fprintf(stderr, "Erro semantico (linha %d): tipo '%s' incompativel com '%s'\n", yylineno, $4->tipo_inferido.c_str(), $1);
+        erro_semantico_detectado = true;
+    }
+    
+    auto* n = new DeclVarNode($1, $2, adotar($4));
+    n->linha = yylineno;
+    $$ = n;
 }
 ```
 
-## Como ficaria no parser.y do projeto
+2. No Uso de um Identificador (Expressão):
 
-O `parser.y` atual é um transpilador puro — traduz C++ pra C sem verificar nenhuma semântica. Pra adicionar a tabela de símbolos, as verificações seriam colocadas diretamente nas ações das regras gramaticais que já existem:
-
-**Na declaração de variável:**
-```c
-declaracao_var:
-    tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON {
-        if (buscar_simbolo_no_escopo_atual($2) != NULL)
-            yyerror("variável já declarada neste escopo");
-
-        inserir_simbolo($2, $1, nivel_atual, yylineno, 1, $4);
-
-        print_indent(nivel_atual);
-        printf("%s %s = %s;\n", $1, $2, $4);
+```cpp
+| TOK_ID
+{
+    Simbolo* s = buscarSimbolo($1, nivel_atual);
+    if (!s) {
+        fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+        erro_semantico_detectado = true;
     }
-```
-
-**No uso de um identificador em expressão:**
-```c
-exp:
-    TOK_ID {
-        Simbolo *s = buscar_simbolo($1);
-        if (s == NULL)
-            yyerror("identificador não declarado");
-
-        $$ = strdup($1);
-    }
-```
-
-**Na declaração de função:**
-```c
-funcao:
-    tipo TOK_ID TOK_LPAREN TOK_RPAREN TOK_LBRACE {
-        inserir_simbolo($2, $1, 0, yylineno, 1, NULL);
-        entrar_escopo();
-        printf("%s %s() {\n", $1, $2);
-        nivel_atual++;
-    }
-    lista_comandos TOK_RBRACE {
-        sair_escopo();
-        nivel_atual--;
-        print_indent(nivel_atual);
-        printf("}\n");
-    }
+    
+    auto* n = new IdentificadorNode($1);
+    n->linha = yylineno;
+    if (s) n->tipo_inferido = s->tipo; // Decora o nó da AST com o tipo real vindo da tabela
+    $$ = n;
+}
 ```
 
 ## Bibliografia:

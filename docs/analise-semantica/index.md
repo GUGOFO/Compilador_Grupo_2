@@ -6,18 +6,18 @@ has_children: true
 
 # Análise Semântica
 
-O que é:
+A análise semântica é a terceira fase do front-end do compilador, executada imediatamente após a construção da Árvore Sintática Abstrata (AST) pelo parser.
 
- - É a terceira fase do front-end de um compilador, ocorre logo seguinte a análise sintática;
- - Diferente do analizador sintático, que análisa a gramática dó código, o analisador semântico verifica o sentido, ou seja, verifica se o código vai conseguir ser compilado e funcionar de forma correta;
-- Por ele ser a última linha de "segurança", ele é responsável por detectar todos os erros que foram passados despercibidos pela análise léxica e pela análise sintática;
+Enquanto o analisador sintático valida apenas a estrutura gramatical do código (a ordem e a disposição dos tokens), o analisador semântico debruça-se sobre o **sentido e a consistência lógica** do programa, servindo como a última barreira de validação estrita antes do início das fases de otimização e geração de código.
 
-Para cada linguagem há uma análise semântica diferente, um compilador de C é diferente de um compilador de C++, porém, existem algumas coisas que são usadas em todos os compiladores na parte semântica, mesmo que sejam linguagens diferentes, que são:
-- verificar se os identificadores foram declarados antes de serem usados nos cálculos;
-- verificar se as palavras-chaves reservadas não estão sendo usadas indevidamente;
-- verificar se os tipos estão declarados corretamente, caso a linguagem seja explicitamente tipada;
-- verificar se os cálculos são consistentes em termos de tipo, sempre que possível;
+No escopo do nosso transpilador de C++ para C, o analisador semântico executa de forma integrada as seguintes rotinas obrigatórias:
+* **Verificação de Escopo:** Garante que todos os identificadores utilizados em expressões matemáticas ou lógicas tenham sido declarados previamente no bloco atual ou em blocos superiores.
+* **Detecção de Redeclarações:** Impede que um mesmo nome de variável ou vetor seja declarado mais de uma vez dentro do mesmo nível de escopo.
+* **Verificador de Tipos (*Type Checker*):** Avalia e valida a consistência de tipos em atribuições simples e compostas, checa a validade aritmética de operações binárias e assegura que os índices de vetores sejam estritamente expressões inteiras.
+* **Validação de Condições de Controle:** Assegura que as expressões que regem as estruturas condicionais e de repetição (`if`, `while`, `do-while`) avaliem para o tipo lógico `bool`.
+* **Consistência de Retorno:** Garante que as instruções `return` dentro do bloco de uma função devolvam um valor perfeitamente compatível com o tipo de dado estipulado na assinatura da função.
 
-## Bibliografia:
+## Bibliografia
 
-https://pgrandinetti-github-io.translate.goog/compilers/page/what-is-semantic-analysis-in-compilers/?_x_tr_sl=en&_x_tr_tl=pt&_x_tr_hl=pt&_x_tr_pto=tc
+- Aho, A. V.; Lam, M. S.; Sethi, R.; Ullman, J. D. **Compiladores: Princípios, Técnicas e Ferramentas** (Livro do Dragão). 2ª ed. Pearson, 2008.
+- Grandinetti, P. *What is Semantic Analysis in Compilers?* Disponível em: <https://pgrandinetti.github.io/compilers/page/what-is-semantic-analysis-in-compilers/>.
