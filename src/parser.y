@@ -19,6 +19,7 @@ int           nivel_atual = 0;
 bool          erro_semantico_detectado = false;
 
 std::set<std::string> variaveis_usadas;
+std::string tipo_retorno_atual = "";
 
 static NodoPtr adotar(ASTNode* p) { return NodoPtr(p); }
 
@@ -129,7 +130,8 @@ declaracao:
 funcao:
     tipo TOK_ID TOK_LPAREN lista_parametros TOK_RPAREN
     {
-        inserirSimbolo($2, $1, 0); // Registra a função no escopo global
+        inserirSimbolo($2, $1, 0);
+        tipo_retorno_atual = $1; 
     }
     bloco_escopo
     {
@@ -140,6 +142,8 @@ funcao:
         }
         auto* fn = new FuncaoNode($1, $2, std::move(params), adotar($7));
         fn->linha = yylineno;
+        
+        tipo_retorno_atual = ""; 
         $$ = fn;
     }
     ;
@@ -418,17 +422,15 @@ comando_if:
     {
         if ($3->tipo_inferido != "bool") {
             fprintf(stderr, "Erro semantico (linha %d): a condicao do 'if' deve ser 'bool' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+            erro_semantico_detectado = true; 
         }
         auto* lit = dynamic_cast<LiteralInteiroNode*>($3);
         if (lit) {
             if (lit->valor == 0) {
-                $$ = new BlocoNode(); 
+                $$ = new BlocoNode();
             } else {
                 auto* n = new BlocoNode();
                 n->adicionar(adotar($5));
-                // Para forçar a impressão de chaves no C sem quebrar o TAC, podemos manter a semântica de bloco isolado.
-                // Uma alternativa simples é usar o próprio IfNode com condição fixa ou criar um escopo em C.
-                // Vamos manter o IfNode tradicional para condições verdadeiras se houver shadowing, ou simplesmente:
                 auto* n_if = new IfNode(adotar($3), adotar($5));
                 n_if->linha = yylineno;
                 $$ = n_if;
@@ -443,11 +445,11 @@ comando_if:
     {
         if ($3->tipo_inferido != "bool") {
             fprintf(stderr, "Erro semantico (linha %d): a condicao do 'if' deve ser 'bool' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+            erro_semantico_detectado = true; 
         }
         auto* lit = dynamic_cast<LiteralInteiroNode*>($3);
         if (lit) {
             if (lit->valor == 0) {
-                // Se o IF for falso, o ELSE é executado. Mantemos a estrutura para não perder o escopo.
                 auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
                 n->linha = yylineno;
                 $$ = n;
@@ -469,6 +471,7 @@ comando_while:
     {
         if ($3->tipo_inferido != "bool") {
             fprintf(stderr, "Erro semantico (linha %d): a condicao do 'while' deve ser 'bool' (recebeu '%s')\n", yylineno, $3->tipo_inferido.c_str());
+            erro_semantico_detectado = true; 
         }
         auto* n = new WhileNode(adotar($3), adotar($5));
         n->linha = yylineno;
@@ -481,6 +484,7 @@ comando_do_while:
     {
         if ($5->tipo_inferido != "bool") {
             fprintf(stderr, "Erro semantico (linha %d): a condicao do 'do-while' deve ser 'bool' (recebeu '%s')\n", yylineno, $5->tipo_inferido.c_str());
+            erro_semantico_detectado = true; 
         }
         auto* n = new DoWhileNode(adotar($2), adotar($5));
         n->linha = yylineno;
@@ -561,6 +565,12 @@ default_item:
 comando_return:
     TOK_RETURN exp TOK_SCOLON
     {
+        if (!tipo_retorno_atual.empty() && !verificar_atribuicao_ok(tipo_retorno_atual, $2->tipo_inferido)) {
+            fprintf(stderr, "Erro semantico (linha %d): retorno do tipo '%s' incompativel com o tipo de retorno da funcao ('%s')\n", 
+                    yylineno, $2->tipo_inferido.c_str(), tipo_retorno_atual.c_str());
+            erro_semantico_detectado = true;
+        }
+
         auto* n = new CmdReturnNode(adotar($2));
         n->linha = yylineno;
         $$ = n;
