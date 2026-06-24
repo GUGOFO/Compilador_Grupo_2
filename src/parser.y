@@ -65,6 +65,7 @@ bool verificar_atribuicao_ok(const std::string& destino, const std::string& orig
 %token TOK_EQ TOK_NEQ TOK_LT TOK_GT TOK_LE TOK_GE
 %token TOK_LOGIC_AND TOK_LOGIC_OR TOK_LOGIC_NOT
 %token TOK_ADD_ASSIGN TOK_SUB_ASSIGN TOK_MULT_ASSIGN TOK_DIV_ASSIGN TOK_MOD_ASSIGN
+%token TOK_INC TOK_DEC
 
 %left TOK_LOGIC_OR
 %left TOK_LOGIC_AND
@@ -847,6 +848,34 @@ exp:
             if (t.size() > 2 && t.substr(t.size()-2) == "[]") n->tipo_inferido = t.substr(0, t.size()-2);
             else n->tipo_inferido = t;
         }
+        $$ = n;
+    }
+    | TOK_ID TOK_INC
+    {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (!s) {
+            fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+            erro_semantico_detectado = true;
+        }
+        variaveis_usadas.insert($1);
+        
+        auto* n = new IncDecNode($1, "++");
+        n->linha = yylineno;
+        if (s) n->tipo_inferido = s->tipo;
+        $$ = n;
+    }
+    | TOK_ID TOK_DEC
+    {
+        Simbolo* s = buscarSimbolo($1, nivel_atual);
+        if (!s) {
+            fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+            erro_semantico_detectado = true;
+        }
+        variaveis_usadas.insert($1);
+        
+        auto* n = new IncDecNode($1, "--");
+        n->linha = yylineno;
+        if (s) n->tipo_inferido = s->tipo;
         $$ = n;
     }
     | TOK_ID TOK_LPAREN lista_argumentos TOK_RPAREN

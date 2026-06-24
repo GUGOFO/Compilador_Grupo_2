@@ -226,6 +226,31 @@ public:
     }
 };
 
+class IncDecNode : public ASTNode {
+public:
+    std::string nome;
+    std::string operador;
+
+    IncDecNode(std::string n, std::string op) : nome(n), operador(op) {}
+
+    void print(int nivel = 0) const override {
+        indent(nivel, stderr); 
+        fprintf(stderr, "[%s: %s]", (operador == "++" ? "Incremento" : "Decremento"), nome.c_str()); 
+        printInfo(stderr); 
+        fprintf(stderr, "\n");
+    }
+
+    void gerarC(int nivel = 0) const override { 
+        printf("%s%s", nome.c_str(), operador.c_str()); 
+    }
+
+    std::string gerarTAC(int nivel = 0) const override {
+        indent(nivel, stderr);
+        fprintf(stderr, "%s := %s %s 1\n", nome.c_str(), nome.c_str(), (operador == "++" ? "+" : "-"));
+        return nome;
+    }
+};
+
 class ExpParenNode : public ASTNode {
 public:
     NodoPtr expr;

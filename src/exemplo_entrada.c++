@@ -70,16 +70,13 @@ int main() {
         break;
     } while (false);
 
-    // Teste de Laço For com Continue
     std::cout << "Testando For (reaproveitando variavel): ";
     std::cout << "\n";
     int i = 0;
-    for (i = 0; i < 2; i + 1) {
+    for (i = 0; i < 2; i++) {
         if (i == 1) {
-            std::cout << "Executou o continue!";
             std::cout << "\n";
             i += 1;
-            continue;
         }
         std::cout << i * 1.0;
         std::cout << "\n";
