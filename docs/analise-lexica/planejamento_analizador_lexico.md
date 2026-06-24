@@ -20,8 +20,6 @@ São termos protegidos pela linguagem que possuem significado gramatical especí
 
 - **Controle de Fluxo:** TOK_IF (if), TOK_ELSE (else), TOK_WHILE (while), TOK_FOR (for), TOK_RETURN (return).
 
-- **C++ Específicos (Subconjunto):** TOK_COUT (cout), TOK_CIN (cin), TOK_TRUE (true), TOK_FALSE (false)
-
 ### 1.2 - Identificadores:
 
 Nomes definidos pelo programador para variáveis, funções e namespaces.

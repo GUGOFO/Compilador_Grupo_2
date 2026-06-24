@@ -52,6 +52,9 @@ Esta seção mapeia todos os símbolos que realizam operações matemáticas, l�
 | :--- | :--- | :---: |
 | ; | TOK_SCOLON | Terminador de instrução |
 | . | TOK_COMMA | Separador de elementos |
+| ,  | TOK_COMMA    | Separador de elementos  |
+| ++ | TOK_INC      | Incremento pós-fixado   |
+| -- | TOK_DEC      | Decremento pós-fixado   |
 | ( | TOK_LPAREN | Início de expressão ou lista de argumentos |
 | ) | TOK_RPAREN | Fim de expressão ou lista de argumentos |
 | { | TOK_LBRACE | Início de bloco de código |
