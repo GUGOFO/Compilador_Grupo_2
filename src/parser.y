@@ -103,9 +103,6 @@ programa:
             fprintf(stderr, "\n❌ Falha na compilacao: Erros semanticos detectados. Pipeline abortado.\n\n");
             exit(1); 
         }
-
-        // 3. Executa a transpilação final para o arquivo .c (stdout)
-        if (raiz) raiz->gerarC();
     }
     ;
 
@@ -427,12 +424,14 @@ comando_if:
         auto* lit = dynamic_cast<LiteralInteiroNode*>($3);
         if (lit) {
             if (lit->valor == 0) {
+                // Mantém o descarte perfeito de memória e código morto que ele fez!
                 delete $3;
                 delete $5;
                 $$ = new BlocoNode();
             } else {
-                delete $3;
-                $$ = $5;
+                auto* n = new IfNode(adotar($3), adotar($5));
+                n->linha = yylineno;
+                $$ = n;
             }
         } else {
             auto* n = new IfNode(adotar($3), adotar($5));
@@ -448,15 +447,9 @@ comando_if:
         }
         auto* lit = dynamic_cast<LiteralInteiroNode*>($3);
         if (lit) {
-            if (lit->valor == 0) {
-                delete $3;
-                delete $5;
-                $$ = $7;
-            } else {
-                delete $3;
-                delete $7;
-                $$ = $5;
-            }
+            auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
+            n->linha = yylineno;
+            $$ = n;
         } else {
             auto* n = new IfNode(adotar($3), adotar($5), adotar($7));
             n->linha = yylineno;
