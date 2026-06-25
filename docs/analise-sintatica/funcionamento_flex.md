@@ -1,6 +1,6 @@
 ---
 title: Estrutura e Funcionamento do Flex
-parent: Análise Léxica
+parent: Análise Sintatica
 nav_order: 2
 ---
 
