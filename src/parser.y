@@ -487,14 +487,23 @@ comando_do_while:
     ;
 
 comando_for:
-    TOK_FOR TOK_LPAREN tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON exp TOK_SCOLON exp TOK_RPAREN
+    TOK_FOR TOK_LPAREN tipo TOK_ID TOK_ASSIGN exp TOK_SCOLON
     {
-        inserirSimbolo($4, $3, nivel_atual + 1);
+        nivel_atual++; 
+        inserirSimbolo($4, $3, nivel_atual); 
     }
-    bloco_escopo
+    exp TOK_SCOLON exp TOK_RPAREN bloco_escopo
     {
+        // Fecha o escopo do próprio cabeçalho do FOR (Nível 2)
+        fprintf(stderr, "\n--- SVAL/ESCOPO FECHANDO FOR (Nível %d) ---", nivel_atual);
+        imprimirTabela(); 
+        fprintf(stderr, "-------------------------------------------\n");
+
+        removerEscopo(nivel_atual);
+        nivel_atual--; 
+
         auto* init = new DeclVarNode($3, $4, adotar($6));
-        auto* n = new ForNode(adotar(init), adotar($8), adotar($10), adotar($13));
+        auto* n = new ForNode(adotar(init), adotar($9), adotar($11), adotar($13));
         n->linha = yylineno;
         $$ = n;
     }
