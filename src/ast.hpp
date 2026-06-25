@@ -251,6 +251,30 @@ public:
     }
 };
 
+class ExprComandoNode : public ASTNode {
+public:
+    NodoPtr expressao;
+    explicit ExprComandoNode(NodoPtr expr) : expressao(std::move(expr)) {}
+
+    void print(int nivel = 0) const override {
+        if (expressao) expressao->print(nivel); // Repassa o print para manter sua árvore limpa
+    }
+    
+    void gerarC(int nivel = 0) const override {
+        indent(nivel);
+        if (expressao) expressao->gerarC();
+        printf(";\n"); 
+    }
+    
+    std::string gerarTAC(int nivel = 0) const override {
+        return expressao ? expressao->gerarTAC(nivel) : "";
+    }
+    
+    void otimizar(NodoPtr& auto_ponteiro) override {
+        if (expressao) expressao->otimizar(expressao);
+    }
+};
+
 class ExpParenNode : public ASTNode {
 public:
     NodoPtr expr;

@@ -225,6 +225,7 @@ comando:
     | comando_do_while   { $$ = $1; }
     | comando_for        { $$ = $1; }
     | comando_switch     { $$ = $1; }
+    | exp TOK_SCOLON     { $$ = new ExprComandoNode(adotar($1)); $$->linha = yylineno; }
     | TOK_BREAK TOK_SCOLON
     {
         $$ = new BreakNode();
