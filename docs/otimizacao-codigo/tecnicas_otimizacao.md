@@ -1,7 +1,7 @@
 ---
-title: Técnicas de Otimização Implementadas
+title: Tecnicas Usadas
 parent: Otimização de Código
-nav_order: 2
+nav_order: 1
 ---
 
 # Técnicas de Otimização Implementadas
