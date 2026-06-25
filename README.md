@@ -40,6 +40,22 @@ g++ -std=c++17 parser.tab.c lex.yy.c tabela.c -o transpilador
 
 Este documento detalha as especificações formais, decisões de projeto, verificações semânticas e estratégias de otimização implementadas no transpilador modular de C++ para C.
 
+## Como Rodar a Suíte de Testes Automatizada
+
+O projeto conta com um script de automação (executar_testes.sh) que realiza todo o ciclo de vida do pipeline: compila o transpilador, valida os arquivos lícitos, captura e exibe os diagnósticos dos testes de erro controlados e imprime os relatórios analíticos de Código Intermediário (TAC).
+
+1. Dê permissão de execução ao script:
+
+```bash
+chmod +x executar_testes.sh
+```
+
+2. Execute a suíte completa:
+
+```bash
+./executar_testes.sh
+```
+
 ## Arquitetura do Pipeline do Compilador
 O sistema implementa o fluxo de tradução clássico dividido nas seguintes camadas estruturadas:
 * **Análise Léxica (`scanner.l`):** Conversão do fluxo de caracteres de entrada em tokens lógicos, tratando palavras reservadas, literais, operadores matemáticos/atribuição e lógica simbólica/textual (`and`, `not`, `or`).

@@ -1,6 +1,6 @@
 ---
 title: Escopo Operational Atualizado
-nav_order: 6
+nav_order: 99
 ---
 
 # Tabela de Escopo Operacional do Compilador

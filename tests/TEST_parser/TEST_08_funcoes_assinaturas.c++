@@ -1,14 +1,14 @@
-// Função com múltiplos parâmetros no escopo global
 int somarTres(int a, int b, int c) {
     return a + b + c;
 }
 
-// Procedimento vazio auxiliar
-void processar() {
+int processar() {
     int x = somarTres(1, 2, 3);
+    return x;
 }
 
 int main() {
-    processar();
+    // Chamadas de função na sua linguagem devem ser capturadas por uma atribuição exp
+    int resultadoDummy = processar();
     return 0;
 }
