@@ -180,9 +180,6 @@ bloco_escopo:
     }
     lista_comandos TOK_RBRACE
     {
-        fprintf(stderr, "\n--- SVAL/ESCOPO FECHANDO (Nível %d) ---", nivel_atual);
-        imprimirTabela(); 
-        fprintf(stderr, "---------------------------------------\n");
 
         removerEscopo(nivel_atual);
         nivel_atual--;
@@ -252,8 +249,10 @@ comando_cin:
     TOK_STD TOK_SCOPE TOK_CIN TOK_IN TOK_ID TOK_SCOLON
     {
         Simbolo* s = buscarSimbolo($5, nivel_atual);
-        if (!s)
+        if (!s) {
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $5);
+            erro_semantico_detectado = true;
+        }
         variaveis_usadas.insert($5); 
         auto* n = new CmdCinNode($5);
         n->linha = yylineno;
@@ -322,9 +321,9 @@ comando_atribuicao:
         if (s && (!es_tipo_numerico(s->tipo) || !es_tipo_numerico($3->tipo_inferido))) {
             fprintf(stderr, "Erro semantico (linha %d): operador '+=' nao suportado entre '%s' e '%s'\n", 
                     yylineno, s->tipo, $3->tipo_inferido.c_str());
+            erro_semantico_detectado = true;
         }
 
-        // 🚀 OTIMIZAÇÃO: Registra o uso
         variaveis_usadas.insert($1);
 
         auto* n = new AssignNode($1, "+=", adotar($3));
@@ -511,8 +510,10 @@ comando_for:
     bloco_escopo
     {
         Simbolo* s = buscarSimbolo($3, nivel_atual);
-        if (!s)
+        if (!s) {
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $3);
+            erro_semantico_detectado = true;
+        }
         auto* init = new AssignNode($3, "=", adotar($5));
         auto* n = new ForNode(adotar(init), adotar($7), adotar($9), adotar($11));
         n->linha = yylineno;
@@ -626,8 +627,10 @@ exp:
     | TOK_ID
     {
         Simbolo* s = buscarSimbolo($1, nivel_atual);
-        if (!s)
+        if (!s) {
             fprintf(stderr, "Erro semantico (linha %d): variavel '%s' nao declarada.\n", yylineno, $1);
+            erro_semantico_detectado = true; 
+        }
         variaveis_usadas.insert($1); 
         auto* n = new IdentificadorNode($1);
         n->linha = yylineno;
@@ -643,7 +646,6 @@ exp:
     }
     | exp TOK_PLUS exp
     {
-        // 🚀 OTIMIZAÇÃO: Tenta fazer o Constant Folding de Inteiros
         auto* esq_lit = dynamic_cast<LiteralInteiroNode*>($1);
         auto* dir_lit = dynamic_cast<LiteralInteiroNode*>($3);
         
@@ -669,7 +671,6 @@ exp:
     }
     | exp TOK_MINUS exp
     {
-        // 🚀 OTIMIZAÇÃO: Tenta fazer o Constant Folding de Inteiros
         auto* esq_lit = dynamic_cast<LiteralInteiroNode*>($1);
         auto* dir_lit = dynamic_cast<LiteralInteiroNode*>($3);
         
@@ -684,6 +685,7 @@ exp:
             if (!es_tipo_numerico($1->tipo_inferido) || !es_tipo_numerico($3->tipo_inferido)) {
                 fprintf(stderr, "Erro semantico (linha %d): operador '-' nao suportado entre '%s' e '%s'\n", 
                         yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+                erro_semantico_detectado = true;
                 n->tipo_inferido = "desconhecido";
             } else {
                 n->tipo_inferido = obter_tipo_resultado($1->tipo_inferido, $3->tipo_inferido);
@@ -712,7 +714,6 @@ exp:
     }
     | exp TOK_MULT exp
     {
-        // 🚀 OTIMIZAÇÃO: Tenta fazer o Constant Folding de Inteiros
         auto* esq_lit = dynamic_cast<LiteralInteiroNode*>($1);
         auto* dir_lit = dynamic_cast<LiteralInteiroNode*>($3);
         
@@ -727,6 +728,7 @@ exp:
             if (!es_tipo_numerico($1->tipo_inferido) || !es_tipo_numerico($3->tipo_inferido)) {
                 fprintf(stderr, "Erro semantico (linha %d): operador '*' nao suportado entre '%s' e '%s'\n", 
                         yylineno, $1->tipo_inferido.c_str(), $3->tipo_inferido.c_str());
+                erro_semantico_detectado = true;
                 n->tipo_inferido = "desconhecido";
             } else {
                 n->tipo_inferido = obter_tipo_resultado($1->tipo_inferido, $3->tipo_inferido);

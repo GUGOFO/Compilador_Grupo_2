@@ -13,7 +13,7 @@ printf "        SUÍTE DE TESTES AUTOMATIZADOS - COMPILADOR       \n"
 printf "%s\n" "=======================================================${NEUTRO}"
 
 # -----------------------------------------------------------------
-# 🛠️ PASSO 1: COMPILAÇÃO AUTOMÁTICA DO TRANSPILADOR
+# PASSO 1: COMPILAÇÃO AUTOMÁTICA DO TRANSPILADOR
 # -----------------------------------------------------------------
 printf "\n%s\n" "${ROXO}[PASSO 1] Compilando o Transpilador via Flex/Bison...${NEUTRO}"
 
@@ -36,7 +36,7 @@ fi
 cd ..
 
 # -----------------------------------------------------------------
-# 🧪 PASSO 2: CATEGORIZAÇÃO DOS TESTES
+# PASSO 2: CATEGORIZAÇÃO DOS TESTES
 # -----------------------------------------------------------------
 
 TESTES_LEXICO_PURO=(
@@ -78,9 +78,9 @@ TESTES_TAC=(
 )
 
 # -----------------------------------------------------------------
-# 🏃‍♂️ PASSO 3: EXECUÇÃO DOS TESTES DE CONFORMIDADE
+#  PASSO 3: EXECUÇÃO DOS TESTES DE CONFORMIDADE
 # -----------------------------------------------------------------
-printf "\n%s\n" "${ROXO}🔹 [PASSO 2] Executando Testes de Sucesso...${NEUTRO}"
+printf "\n%s\n" "${ROXO}[PASSO 2] Executando Testes de Sucesso...${NEUTRO}"
 
 for teste in "${TESTES_LEXICO_PURO[@]}"; do
     if [ -f "$notes" ] || [ -f "$teste" ]; then
@@ -134,9 +134,9 @@ for teste in "${TESTES_PROGRAMA_COMPLETO[@]}"; do
 done
 
 # -----------------------------------------------------------------
-# 🛑 PASSO 4: EXECUÇÃO DOS TESTES DE ERRO CONTROLADO
+# PASSO 4: EXECUÇÃO DOS TESTES DE ERRO CONTROLADO
 # -----------------------------------------------------------------
-printf "\n%s\n" "${ROXO}🔸 [PASSO 3] Executando Testes de Erros Controlados (Devem Bloquear)...${NEUTRO}"
+printf "\n%s\n" "${ROXO} [PASSO 3] Executando Testes de Erros Controlados (Devem Bloquear)...${NEUTRO}"
 
 for teste in "${TESTES_ERRO_LEXICO[@]}"; do
     if [ -f "$teste" ]; then
@@ -181,14 +181,14 @@ for teste in "${TESTES_ERRO_SEMANTICO[@]}"; do
 done
 
 # -----------------------------------------------------------------
-# 📐 PASSO 5: RELATÓRIO ANALÍTICO DO CÓDIGO INTERMEDIÁRIO (TAC)
+#  PASSO 5: RELATÓRIO ANALÍTICO DO CÓDIGO INTERMEDIÁRIO (TAC)
 # -----------------------------------------------------------------
-printf "\n%s\n" "${ROXO}📊 [PASSO 4] Extraindo Relatório de Código Intermediário (TAC)...${NEUTRO}"
+printf "\n%s\n" "${ROXO} [PASSO 4] Extraindo Relatório de Código Intermediário (TAC)...${NEUTRO}"
 
 for teste in "${TESTES_TAC[@]}"; do
     if [ -f "$teste" ]; then
         printf "\n%s\n" "${AZUL}-------------------------------------------------------${NEUTRO}"
-        printf "📄 Arquivo de Origem: %s\n" "$teste"
+        printf " Arquivo de Origem: %s\n" "$teste"
         printf "%s\n" "${AZUL}-------------------------------------------------------${NEUTRO}"
         ./src/transpilador < "$teste" > /dev/null
         printf "%s\n" "${AZUL}-------------------------------------------------------${NEUTRO}"

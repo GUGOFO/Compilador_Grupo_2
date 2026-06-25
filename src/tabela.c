@@ -18,8 +18,11 @@ void inserirSimbolo(char *nome, char *tipo, int escopo){
     }
 
     Simbolo *novo = (Simbolo *)malloc(sizeof(Simbolo));
-    strcpy(novo -> nome, nome);
-    strcpy(novo -> tipo, tipo);
+    strncpy(novo -> nome, nome, sizeof(novo -> nome) - 1);
+    novo -> nome[sizeof(novo -> nome) - 1] = '\0'; 
+
+    strncpy(novo -> tipo, tipo, sizeof(novo -> tipo) - 1);
+    novo -> tipo[sizeof(novo -> tipo) - 1] = '\0';
     novo -> escopo = escopo;
     novo->prox = NULL;
 
